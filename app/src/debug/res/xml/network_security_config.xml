@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds reach a development backend over plain HTTP: the emulator's host (10.0.2.2)
+     or a laptop on the same Wi-Fi (pass -PwrApiBaseUrl). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

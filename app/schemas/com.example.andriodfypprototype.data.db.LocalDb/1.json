@@ -1,0 +1,207 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "e885373ad0d84a6a73972b252b548b0d",
+    "entities": [
+      {
+        "tableName": "records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`kind` TEXT NOT NULL, `id` TEXT NOT NULL, `fieldId` TEXT, `clientId` TEXT, `local` INTEGER NOT NULL, `json` TEXT NOT NULL, `photoPath` TEXT, `photoUploaded` INTEGER NOT NULL, PRIMARY KEY(`kind`, `id`))",
+        "fields": [
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fieldId",
+            "columnName": "fieldId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "clientId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "local",
+            "columnName": "local",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "json",
+            "columnName": "json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoPath",
+            "columnName": "photoPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "photoUploaded",
+            "columnName": "photoUploaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "kind",
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_records_fieldId",
+            "unique": false,
+            "columnNames": [
+              "fieldId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_records_fieldId` ON `${TABLE_NAME}` (`fieldId`)"
+          },
+          {
+            "name": "index_records_clientId",
+            "unique": false,
+            "columnNames": [
+              "clientId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_records_clientId` ON `${TABLE_NAME}` (`clientId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "changes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`clientSeq` INTEGER NOT NULL, `clientId` TEXT NOT NULL, `entity` TEXT NOT NULL, `op` TEXT NOT NULL, `at` INTEGER NOT NULL, `payload` TEXT NOT NULL, `summary` TEXT NOT NULL, `bytes` INTEGER NOT NULL, `ownedByMobile` INTEGER NOT NULL, `status` TEXT NOT NULL, `reason` TEXT, `localKind` TEXT, `localId` TEXT, `userId` TEXT, PRIMARY KEY(`clientSeq`))",
+        "fields": [
+          {
+            "fieldPath": "clientSeq",
+            "columnName": "clientSeq",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "clientId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entity",
+            "columnName": "entity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "op",
+            "columnName": "op",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "at",
+            "columnName": "at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "summary",
+            "columnName": "summary",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bytes",
+            "columnName": "bytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownedByMobile",
+            "columnName": "ownedByMobile",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "localKind",
+            "columnName": "localKind",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "clientSeq"
+          ]
+        }
+      },
+      {
+        "tableName": "meta",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e885373ad0d84a6a73972b252b548b0d')"
+    ]
+  }
+}
