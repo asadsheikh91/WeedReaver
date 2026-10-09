@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.AndriodFypPrototype" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/cream</item>
+        <item name="android:colorAccent">@color/forest</item>
+        <item name="android:windowSplashScreenBackground">@color/cream</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/forest</item>
+    </style>
+</resources>

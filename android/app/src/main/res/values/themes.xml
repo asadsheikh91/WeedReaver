@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.AndriodFypPrototype" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/cream</item>
+        <item name="android:colorAccent">@color/forest</item>
+    </style>
+</resources>

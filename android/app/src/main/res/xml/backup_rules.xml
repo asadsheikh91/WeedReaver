@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The session is sealed with a Keystore key that never leaves the phone, and the install id
+     identifies this handset to the station: neither may be restored onto another device. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="wr_session.xml" />
+</full-backup-content>
