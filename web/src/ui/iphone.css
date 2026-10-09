@@ -1,0 +1,93 @@
+/* iPhone Pro Max — all lengths in cqw (1cqw = 1% of the device's own width). */
+.ip {
+  --rx: 0deg; --ry: 0deg; --gx: 30%; --gy: 12%;
+  --f1: #6b7686; --f2: #2b323c; --f3: #565f6e; --f4: #1f252d; --edge: rgba(255, 255, 255, 0.22);
+  --btn1: #4a5361; --btn2: #262c35;
+  position: relative; width: 100%; aspect-ratio: 100 / 208.4; container-type: inline-size;
+  perspective: 1400px; user-select: none; -webkit-user-select: none;
+}
+.ip--silver { --f1: #f3f3f2; --f2: #a9acb1; --f3: #e2e2e1; --f4: #8e9298; --edge: rgba(255, 255, 255, 0.9); --btn1: #d6d7d9; --btn2: #9a9da3; }
+.ip--orange { --f1: #f2a074; --f2: #b9541f; --f3: #e58a58; --f4: #9b4318; --edge: rgba(255, 220, 196, 0.6); --btn1: #d9723c; --btn2: #a34a1c; }
+
+.ip__tilt {
+  position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry)); transition: transform 0.9s var(--ease, cubic-bezier(0.2, 0, 0, 1));
+}
+.ip.is-live .ip__tilt { transition-duration: 0.12s; }
+
+/* ground contact + ambient occlusion */
+.ip__ground {
+  position: absolute; left: 8%; right: 8%; bottom: -3.2cqw; height: 9cqw; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(15, 29, 21, 0.5), rgba(15, 29, 21, 0.18) 60%, transparent);
+  filter: blur(2.2cqw); transform: translateZ(-1px);
+}
+
+/* titanium band */
+.ip__frame {
+  position: absolute; inset: 0; padding: 1.55cqw; border-radius: 15.6cqw;
+  background:
+    linear-gradient(152deg, var(--f1) 0%, var(--f2) 16%, var(--f3) 38%, var(--f4) 58%, var(--f3) 80%, var(--f2) 100%);
+  box-shadow:
+    inset 0 0 0 0.28cqw var(--edge),
+    inset 0 0 0 0.6cqw rgba(0, 0, 0, 0.35),
+    0 0 0 0.14cqw rgba(0, 0, 0, 0.55),
+    0 2.4cqw 4.2cqw -1.2cqw rgba(15, 29, 21, 0.4),
+    0 9cqw 16cqw -7cqw rgba(15, 29, 21, 0.62),
+    0 22cqw 34cqw -20cqw rgba(15, 29, 21, 0.55);
+}
+.ip__frame::before { /* brushed grain */
+  content: ''; position: absolute; inset: 0; border-radius: inherit; opacity: 0.16; mix-blend-mode: overlay;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.5) 0 0.12cqw, transparent 0.12cqw 0.42cqw);
+  -webkit-mask: linear-gradient(#000, #000) content-box exclude, linear-gradient(#000, #000);
+  mask: linear-gradient(#000, #000) content-box exclude, linear-gradient(#000, #000);
+}
+.ip__bezel { position: relative; width: 100%; height: 100%; padding: 0.85cqw; border-radius: 14.1cqw; background: #05070a; box-shadow: inset 0 0 0 0.2cqw #161b21; }
+.ip__screen { position: relative; width: 100%; height: 100%; border-radius: 13.3cqw; overflow: hidden; background: var(--ivory, #FFFCF6); isolation: isolate; }
+.ip__screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; -webkit-user-drag: none; }
+
+/* status bar: time and icons centre on the Dynamic Island's horizontal axis */
+.ip__status {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 0; height: 11.6cqw; display: flex; justify-content: space-between; align-items: center;
+  padding: 0 0.5cqw; color: #0d1410;
+}
+.ip__screen--light .ip__status { color: #fff; filter: drop-shadow(0 0 0.5cqw rgba(0, 0, 0, 0.35)); }
+.ip__time, .ip__icons { width: 35%; display: flex; align-items: center; justify-content: center; }
+.ip__time { font: 600 3.7cqw/1 var(--font-sans, 'Inter Variable', system-ui, sans-serif); letter-spacing: -0.01em; padding-top: 0.5cqw; font-feature-settings: 'tnum'; }
+.ip__icons { gap: 1.05cqw; padding-top: 0.4cqw; }
+.ip__icons svg { height: 3cqw; width: auto; fill: currentColor; }
+.ip__icons svg:nth-child(2) { height: 3.05cqw; }
+.ip__icons svg:nth-child(3) { height: 3.2cqw; }
+
+/* Dynamic Island with the camera and sensor cluster */
+.ip__island {
+  position: absolute; z-index: 4; top: 2.4cqw; left: 50%; width: 27cqw; height: 7.8cqw; margin-left: -13.5cqw; border-radius: 4cqw; background: #000;
+  box-shadow: 0 0 0 0.12cqw rgba(255, 255, 255, 0.04);
+}
+.ip__island::before { content: ''; position: absolute; right: 2.5cqw; top: 50%; width: 3.5cqw; height: 3.5cqw; margin-top: -1.75cqw; border-radius: 50%;
+  background: radial-gradient(circle at 34% 32%, #3a4a78 0%, #131a33 34%, #05060d 70%); box-shadow: inset 0 0 0 0.25cqw #0b0d14; }
+.ip__island::after { content: ''; position: absolute; right: 8.2cqw; top: 50%; width: 1.2cqw; height: 1.2cqw; margin-top: -0.6cqw; border-radius: 50%; background: #0a0d12; opacity: 0.8; }
+
+.ip__home { position: absolute; z-index: 3; bottom: 1.9cqw; left: 50%; width: 34cqw; height: 1.3cqw; margin-left: -17cqw; border-radius: 1cqw; background: #0d1410; opacity: 0.86; }
+
+/* glass: fixed diagonal sheen + a specular hot-spot that follows the pointer */
+.ip__glare {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none; border-radius: inherit;
+  background:
+    radial-gradient(60% 34% at var(--gx) var(--gy), rgba(255, 255, 255, 0.16), transparent 70%),
+    linear-gradient(118deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.04) 24%, transparent 40%, transparent 72%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: inset 0 0 0 0.2cqw rgba(255, 255, 255, 0.06), inset 0 0.4cqw 1.2cqw rgba(0, 0, 0, 0.18);
+  opacity: 0.75; transition: opacity 0.4s;
+}
+.ip.is-live .ip__glare { opacity: 1; }
+
+/* side keys */
+.ip__btn { position: absolute; z-index: 0; width: 0.95cqw; border-radius: 0.5cqw; background: linear-gradient(90deg, var(--btn1), var(--btn2)); box-shadow: 0 0 0 0.12cqw rgba(0, 0, 0, 0.45), inset 0 0 0.2cqw rgba(255, 255, 255, 0.35); }
+.ip__btn--action { left: -0.55cqw; top: 17.3cqw; height: 7.2cqw; }
+.ip__btn--volup { left: -0.55cqw; top: 28.3cqw; height: 12.8cqw; }
+.ip__btn--voldn { left: -0.55cqw; top: 43.6cqw; height: 12.8cqw; }
+.ip__btn--power { right: -0.55cqw; left: auto; top: 35cqw; height: 20.5cqw; background: linear-gradient(270deg, var(--btn1), var(--btn2)); }
+.ip__btn--camctl { right: -0.4cqw; left: auto; top: 128cqw; height: 15cqw; width: 0.8cqw; background: linear-gradient(270deg, var(--btn1), var(--btn2)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ip__tilt { transition: none; transform: none !important; }
+}

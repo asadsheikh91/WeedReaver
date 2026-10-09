@@ -1,0 +1,14 @@
+.dv__top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.dv__map { height: 320px; position: relative; }
+.dv__map .map { position: absolute; inset: 0; }
+.dv__phone { position: relative; width: 52px; height: 52px; border-radius: 16px; background: var(--sage-tint); display: grid; place-items: center; color: var(--forest); flex: none; }
+.dv__dot { position: absolute; right: -3px; top: -3px; width: 14px; height: 14px; border-radius: 50%; background: var(--ink-3); border: 3px solid var(--ivory); }
+.dv__dot.is-on { background: var(--moss); animation: livedot 2s ease-in-out infinite; }
+.dv__meta { display: flex; align-items: center; gap: 32px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dv__meta .overline { margin-bottom: 4px; }
+.dv__rules { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.rule ul { margin: 16px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.rule li { position: relative; padding-left: 20px; font-size: 13.5px; color: var(--ink-2); }
+.rule li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--moss); }
+@keyframes livedot { 0%, 100% { box-shadow: 0 0 0 0 rgba(79, 139, 92, 0.5); } 50% { box-shadow: 0 0 0 7px rgba(79, 139, 92, 0); } }
+@media (max-width: 1180px) { .dv__top, .dv__rules { grid-template-columns: 1fr; } }

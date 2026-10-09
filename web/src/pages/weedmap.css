@@ -1,0 +1,53 @@
+.wm { position: relative; height: 100%; overflow: hidden; }
+.wm__map { position: absolute; inset: 0; }
+
+.wm__panel {
+  position: absolute; z-index: 5; top: 16px; left: 16px; bottom: 16px; width: 356px;
+  background: rgba(255, 252, 246, 0.94); backdrop-filter: blur(14px) saturate(1.1); border: 1px solid var(--line);
+  border-radius: 24px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden;
+}
+.wm__scroll { padding: 18px 18px 20px; overflow-y: auto; flex: 1; }
+.wm__field { font-weight: 600; height: 42px; }
+.wm__sec { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.wm__sec:first-child { border-top: 0; margin-top: 0; }
+.wm__thr { display: flex; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
+.wm__thr .num-xl { font-size: 52px; line-height: 56px; color: var(--forest); }
+.wm__thr .num-xl small { font-size: 26px; font-weight: 500; margin-left: 2px; color: var(--ink-2); }
+.wm__diff { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 10px 10px 14px; border-radius: 14px; background: var(--sage-tint); border: 1px solid var(--sage-line); font-size: 13px; color: var(--forest); }
+.wm__diff b { font-weight: 700; }
+.wm__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; margin-top: 18px; padding: 16px; border-radius: 16px; background: var(--cream); border: 1px solid var(--line); }
+.wm__on { color: var(--forest); font-weight: 700; }
+.wm__layer { display: flex; align-items: center; justify-content: space-between; height: 38px; }
+.wm__legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+.wm__legend span { display: inline-flex; align-items: center; gap: 6px; }
+.wm__legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.wm__legend i.wm__outline { background: transparent; border: 1.5px solid var(--ink); }
+.wm__wait { margin-top: 28px; text-align: center; padding: 28px 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.wm__wait h4 { font: 600 15px/20px var(--font-sans); margin-top: 8px; }
+.wm__wait p { font-size: 13px; line-height: 19px; color: var(--ink-2); }
+.wm__reopen { position: absolute; z-index: 5; top: 20px; left: 20px; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 14px; background: var(--ivory); box-shadow: var(--shadow-md); font: 600 13px/1 var(--font-sans); border: 1px solid var(--line); }
+
+.wm__inspector {
+  position: absolute; z-index: 5; top: 16px; right: 16px; width: 320px; padding: 20px;
+  background: rgba(255, 252, 246, 0.96); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow-lg);
+}
+.wm__close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); }
+.wm__close:hover { background: var(--cream-deep); color: var(--ink); }
+.wm__cellref { min-width: 46px; height: 40px; padding: 0 8px; border-radius: 12px; display: grid; place-items: center; font: 700 13px/1 var(--font-sans); }
+.wm__grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; }
+
+.wm__bar {
+  position: absolute; z-index: 5; bottom: 16px; left: 392px; display: flex; align-items: center; gap: 4px; padding: 6px;
+  background: rgba(255, 252, 246, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-md);
+}
+.wm__bar .vline { height: 22px; align-self: center; margin: 0 4px; }
+.wm__tip { position: absolute; z-index: 4; pointer-events: none; display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(15, 29, 21, 0.9); color: #fff; font: 500 12px/16px var(--font-sans); }
+.wm__tip b { font-weight: 700; }
+.wm .map__controls { top: 16px !important; right: 16px !important; }
+.wm:has(.wm__inspector) .map__controls { right: 352px !important; }
+.wm .map__foot { left: auto !important; right: 16px; bottom: 16px !important; }
+
+@media (max-width: 1180px) {
+  .wm__panel { width: 320px; }
+  .wm__bar { left: 352px; }
+}

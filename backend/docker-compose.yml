@@ -1,0 +1,86 @@
+# Production-shaped stack: PostgreSQL, a one-shot migration/bootstrap, the API (2 processes),
+# a separate processing worker and OpenDroneMap (NodeODM) for photogrammetry. Copy .env.example
+# to .env and set WR_SECRET_KEY first. To stitch real flights, also set in .env:
+#   WR_ORTHOMOSAIC_ENGINE=app.pipeline.orthomosaic:NodeODMOrthomosaicEngine
+#   NODEODM_TOKEN=<a random string>
+#
+#   docker compose up -d --build
+#   docker compose run --rm api python -m app.cli create-admin --email you@station.pk --name "Your Name"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-weedreaver}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-weedreaver}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build: .
+    env_file: .env
+    environment: &dbenv
+      WR_ENVIRONMENT: production
+      WR_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-weedreaver}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-weedreaver}
+      WR_STORAGE_DIR: /data/storage
+    command: ["python", "-m", "app.cli", "bootstrap"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: *dbenv
+      WR_EMBEDDED_WORKER: "false"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2",
+              "--proxy-headers", "--forwarded-allow-ips", "*"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - storage:/data/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: *dbenv
+      WR_NODEODM_URL: http://nodeodm:3000
+      WR_NODEODM_TOKEN: ${NODEODM_TOKEN:-}
+    command: ["python", "-m", "app.worker"]
+    volumes:
+      - storage:/data/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  # OpenDroneMap behind its REST API. Only the worker talks to it; no port is published.
+  # GPU build (NVIDIA): image opendronemap/nodeodm:gpu plus `gpus: all`.
+  nodeodm:
+    image: opendronemap/nodeodm:latest
+    restart: unless-stopped
+    command: ["--port", "3000", "--token", "${NODEODM_TOKEN:-}", "--parallel_queue_processing", "1",
+              "--cleanup_uploads_after", "1440", "--cleanup_tasks_after", "2880"]
+    volumes:
+      - odmdata:/var/www/data
+
+volumes:
+  pgdata:
+  storage:
+  odmdata:

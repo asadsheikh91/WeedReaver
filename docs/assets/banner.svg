@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="t d">
+  <title id="t">WeedReaver</title>
+  <desc id="d">Survey-guided spot spraying. Know where control failed.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F1D15"/>
+      <stop offset=".55" stop-color="#143524"/>
+      <stop offset="1" stop-color="#1E4A33"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#E4552D" stop-opacity=".95"/>
+      <stop offset=".35" stop-color="#F3C04A" stop-opacity=".7"/>
+      <stop offset=".7" stop-color="#9BD08A" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#9BD08A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#F3C04A" stop-opacity=".85"/>
+      <stop offset=".55" stop-color="#9BD08A" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#9BD08A" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#F5F0E6" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="420" fill="url(#bg)"/>
+  <rect width="1280" height="420" fill="url(#grid)"/>
+
+  <!-- weed-pressure heat patches over the survey grid -->
+  <ellipse cx="1000" cy="150" rx="150" ry="105" fill="url(#glowA)"/>
+  <ellipse cx="1130" cy="300" rx="95" ry="70" fill="url(#glowB)"/>
+  <ellipse cx="860" cy="320" rx="70" ry="52" fill="url(#glowB)" opacity=".8"/>
+
+  <!-- zone markers -->
+  <g font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="17" text-anchor="middle">
+    <circle cx="1000" cy="150" r="19" fill="#B9552F" stroke="#FFFCF6" stroke-width="2.5"/>
+    <text x="1000" y="156" fill="#FFFCF6">A</text>
+    <circle cx="1130" cy="300" r="17" fill="#C9983D" stroke="#FFFCF6" stroke-width="2.5"/>
+    <text x="1130" y="306" fill="#143524">B</text>
+    <circle cx="860" cy="320" r="15" fill="#C9983D" stroke="#FFFCF6" stroke-width="2.5"/>
+    <text x="860" y="326" fill="#143524">C</text>
+  </g>
+  <!-- spray route -->
+  <path d="M760 250 L860 320 L1000 150 L1130 300" fill="none" stroke="#FFF6DE" stroke-width="2.5" stroke-dasharray="7 7" stroke-linecap="round" opacity=".85"/>
+  <circle cx="760" cy="250" r="8" fill="#2F7FD8" stroke="#FFFCF6" stroke-width="2.5"/>
+
+  <!-- brand mark: wheat leaf in a survey reticle -->
+  <g transform="translate(88 92) scale(1.1)">
+    <circle cx="50" cy="50" r="50" fill="#F5F0E6"/>
+    <g fill="none" stroke="#1E4A33" stroke-opacity=".6" stroke-width="4.5" stroke-linecap="round">
+      <path d="M60.26 21.84 A30 30 0 0 1 80.00 49.14"/>
+      <path d="M79.92 61.18 A30 30 0 0 1 52.27 79.48"/>
+      <path d="M39.74 78.16 A30 30 0 0 1 20.00 50.86"/>
+      <path d="M20.08 38.82 A30 30 0 0 1 47.73 20.52"/>
+    </g>
+    <path d="M37 67C34 48 52 33 67 31C66 47 53 63 37 67Z" fill="#1E4A33"/>
+    <path d="M40 64 62 36" stroke="#F5F0E6" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+
+  <text x="88" y="268" font-family="Fraunces, Georgia, 'Times New Roman', serif" font-size="84" fill="#F5F0E6" letter-spacing="-2">WeedReaver</text>
+  <text x="90" y="318" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="34" fill="#C9983D">Know where control failed.</text>
+  <text x="90" y="362" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="17" fill="#DCE6D2" letter-spacing="3">SURVEY-GUIDED SPOT SPRAYING  ·  PUNJAB WHEAT</text>
+</svg>

@@ -1,0 +1,14 @@
+.st { display: grid; grid-template-columns: 200px minmax(0, 820px); gap: 40px; align-items: start; }
+.st__nav { position: sticky; top: 0; display: flex; flex-direction: column; gap: 2px; }
+.st__nav button { text-align: left; height: 38px; padding: 0 14px; border-radius: 10px; font: 500 14px/20px var(--font-sans); color: var(--ink-2); transition: all var(--t-quick); }
+.st__nav button:hover { background: var(--cream-deep); color: var(--ink); }
+.st__nav button.is-on { background: var(--sage); color: var(--forest); font-weight: 600; }
+.st__body { display: flex; flex-direction: column; gap: 24px; }
+.st__body section { scroll-margin-top: 16px; }
+.st__thr { display: flex; align-items: center; gap: 32px; margin: 26px 0 8px; }
+.st__big { display: flex; align-items: baseline; gap: 2px; min-width: 110px; color: var(--forest); }
+.st__big .num-xl { font-size: 64px; line-height: 64px; }
+.st__impact { display: flex; align-items: center; gap: 32px; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.st__row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; }
+.st__row:first-of-type { margin-top: 8px; }
+@media (max-width: 1080px) { .st { grid-template-columns: 1fr; } .st__nav { position: static; flex-direction: row; flex-wrap: wrap; } .st__impact { flex-wrap: wrap; } }

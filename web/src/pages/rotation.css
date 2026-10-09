@@ -1,0 +1,12 @@
+.rot__hero { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; }
+.why { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; font-size: 13.5px; line-height: 19px; }
+.why li { display: flex; gap: 10px; align-items: flex-start; color: var(--ink-2); }
+.why li svg { flex: none; margin-top: 2px; color: var(--moss); }
+.why li.warn svg { color: var(--wheat); }
+.why li.bad svg { color: var(--clay); }
+.why li.bad { color: var(--clay-ink); }
+.matrix { display: flex; flex-direction: column; gap: 10px; }
+.matrix__row { display: flex; align-items: center; gap: 18px; padding: 16px 20px; background: var(--ivory); border: 1px solid var(--line); border-radius: 18px; }
+.matrix__row.is-planned { border-style: dashed; background: transparent; }
+.matrix__season { width: 120px; display: flex; flex-direction: column; }
+@media (max-width: 1080px) { .rot__hero { grid-template-columns: 1fr; } }

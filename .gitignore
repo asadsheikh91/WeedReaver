@@ -1,0 +1,37 @@
+# --- Android field app: developed separately, not published with this repo
+/app/
+/gradle/
+/gradlew
+/gradlew.bat
+/build.gradle.kts
+/settings.gradle.kts
+/gradle.properties
+/build/
+/captures/
+/screenshots_redesign.png
+.gradle/
+.kotlin/
+.idea/
+*.iml
+.externalNativeBuild
+.cxx
+local.properties
+
+# --- local tooling
+/graphify-out/
+/.claude/
+/CLAUDE.md
+/.claudeignore
+/.graphifyignore
+
+# --- OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# --- secrets and local state (also ignored inside backend/ and web/)
+.env
+.env.local
+*.db
+*.db-shm
+*.db-wal

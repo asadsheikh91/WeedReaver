@@ -1,0 +1,90 @@
+.shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; background: var(--cream); }
+.shell__main { display: flex; flex-direction: column; min-width: 0; height: 100%; overflow: hidden; }
+
+/* ---------------- sidebar ---------------- */
+.side {
+  position: relative; display: flex; flex-direction: column; height: 100%; padding: 20px 14px 14px;
+  background: var(--forest-deep); color: var(--cream); overflow: hidden;
+}
+.side::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+  background: radial-gradient(120% 60% at 0% 0%, rgba(79, 139, 92, 0.28), transparent 60%), radial-gradient(90% 50% at 100% 100%, rgba(201, 152, 61, 0.1), transparent 60%);
+}
+.side > * { position: relative; }
+.side__brand { display: flex; align-items: center; gap: 12px; padding: 4px 10px 22px; }
+.side__brand span { font: 400 21px/1 var(--font-serif); letter-spacing: -0.02em; font-variation-settings: 'opsz' 48, 'SOFT' 40; }
+.side__scroll { flex: 1; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+.side__group { padding: 14px 12px 6px; font: 600 10.5px/14px var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245, 240, 230, 0.42); }
+.side__link {
+  position: relative; display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; width: 100%;
+  font: 500 14px/20px var(--font-sans); color: rgba(245, 240, 230, 0.72); transition: color var(--t-quick), background var(--t-quick);
+}
+.side__link:hover { color: #fff; background: rgba(245, 240, 230, 0.06); }
+.side__link svg { width: 19px; height: 19px; flex: none; opacity: 0.9; }
+.side__link[aria-current='page'] { color: #fff; font-weight: 600; }
+.side__pill { position: absolute; inset: 0; border-radius: 12px; background: rgba(245, 240, 230, 0.13); box-shadow: inset 0 0 0 1px rgba(245, 240, 230, 0.08); }
+.side__pill::before { content: ''; position: absolute; left: -14px; top: 11px; bottom: 11px; width: 3px; border-radius: 0 3px 3px 0; background: var(--heat-low); }
+.side__link > * { position: relative; }
+.side__link > .side__pill { position: absolute; }
+.side__link .grow { white-space: nowrap; }
+.side__foot { padding-top: 12px; margin-top: 8px; border-top: 1px solid rgba(245, 240, 230, 0.1); }
+.side__user { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; background: rgba(245, 240, 230, 0.06); }
+.side__user .avatar { background: var(--moss); }
+.side__user b { display: block; font: 600 13px/17px var(--font-sans); }
+.side__user small { display: block; font-size: 11.5px; line-height: 15px; color: rgba(245, 240, 230, 0.55); }
+.side__site { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 12px; border-radius: 10px; font-size: 12.5px; color: rgba(245, 240, 230, 0.6); }
+.side__site:hover { color: #fff; background: rgba(245, 240, 230, 0.06); }
+.side__site svg { width: 15px; height: 15px; }
+
+/* ---------------- top bar ---------------- */
+.topbar { display: flex; align-items: center; gap: 12px; height: var(--topbar-h); padding: 0 32px; flex: none; border-bottom: 1px solid transparent; transition: border-color var(--t-std), background var(--t-std); background: var(--cream); }
+.topbar[data-stuck='true'] { border-color: var(--line); }
+.topbar__crumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.topbar__crumb .sep { color: var(--ink-3); }
+.topbar__spacer { flex: 1; }
+.search-btn {
+  display: flex; align-items: center; gap: 10px; height: 40px; width: 260px; padding: 0 12px 0 14px; border-radius: 12px;
+  background: var(--ivory); border: 1px solid var(--line); color: var(--ink-3); font-size: 14px; transition: border-color var(--t-quick), box-shadow var(--t-quick);
+}
+.search-btn:hover { border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
+.search-btn svg { width: 17px; height: 17px; }
+.search-btn .grow { text-align: left; }
+.season-chip { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 12px; background: var(--ivory); border: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.season-chip b { color: var(--ink); font-weight: 600; }
+
+.page { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.page__inner { padding: 8px 32px 64px; max-width: 1480px; margin: 0 auto; }
+.page__head { display: flex; align-items: flex-end; gap: 16px; margin: 4px 0 24px; }
+.page__head h1 { font: 400 34px/40px var(--font-serif); letter-spacing: -0.4px; font-variation-settings: 'opsz' 72, 'SOFT' 30; }
+.page__head p { margin-top: 4px; font-size: 14px; color: var(--ink-2); max-width: 640px; }
+.page__actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+.field-switch { display: inline-flex; align-items: center; gap: 10px; }
+
+/* ---------------- responsive: rail ---------------- */
+@media (max-width: 1180px) {
+  .shell { grid-template-columns: var(--sidebar-w-rail) 1fr; }
+  .side { padding: 20px 10px 14px; }
+  .side__brand { justify-content: center; padding: 4px 0 18px; }
+  .side__brand span, .side__group, .side__link .grow, .side__link .count-badge, .side__user > div, .side__site span { display: none; }
+  .side__link { justify-content: center; padding: 0; }
+  .side__pill::before { left: -10px; }
+  .side__user { justify-content: center; padding: 8px 0; background: none; }
+  .side__site { justify-content: center; }
+  .search-btn { width: 40px; padding: 0; justify-content: center; }
+  .search-btn .grow, .search-btn .kbd { display: none; }
+  .season-chip { display: none; }
+  .topbar, .page__inner { padding-left: 24px; padding-right: 24px; }
+}
+@media (max-width: 860px) {
+  .page__head { flex-direction: column; align-items: flex-start; }
+  .page__actions { margin-left: 0; }
+}
+
+/* full-bleed pages (the weed map) take the whole content area */
+.page[data-full='true'] { overflow: hidden; }
+.page__inner--full { padding: 0; max-width: none; height: 100%; }
+
+.boot { min-height: 60vh; display: grid; place-items: center; text-align: center; }
+.boot .spin { display: block; width: 28px; height: 28px; margin: 0 auto 14px; color: var(--forest); border-radius: 50%; border: 2.5px solid currentColor; border-top-color: transparent; animation: spin 0.7s linear infinite; }
+.icon-tile .spin, .drop .spin { display: block; width: 20px; height: 20px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: spin 0.7s linear infinite; }

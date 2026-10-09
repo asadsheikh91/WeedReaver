@@ -1,0 +1,78 @@
+/* Design tokens — a direct port of the Android app's Theme.kt so both surfaces share one palette. */
+:root {
+  /* grounds: never pure white; a sunlight-readable palette */
+  --cream: #F5F0E6;
+  --cream-deep: #ECE4D4;
+  --ivory: #FFFCF6;
+  --line: #E6DCCB;
+  --line-strong: #D5C8B2;
+
+  /* ink */
+  --ink: #1B2A21;
+  --ink-2: #566459;
+  --ink-3: #8B9387;
+
+  /* forest */
+  --forest: #1E4A33;
+  --forest-deep: #143524;
+  --forest-2: #2D6547;
+  --moss: #4F8B5C;
+  --sage: #DCE6D2;
+  --sage-tint: #EBF0E2;
+  --sage-line: #C9D8BD;
+
+  /* wheat / ochre */
+  --wheat: #C9983D;
+  --wheat-ink: #7A5414;
+  --wheat-bg: #F4E8CE;
+  --wheat-line: #E8D3A5;
+
+  /* clay */
+  --clay: #B9552F;
+  --clay-ink: #933F1D;
+  --clay-bg: #F5E1D5;
+  --clay-line: #EBC7B4;
+
+  /* slate */
+  --slate: #3D697D;
+  --slate-bg: #E2EAEB;
+  --slate-line: #CCDADD;
+
+  /* night */
+  --night: #0F1D15;
+  --night-2: #1A2E22;
+
+  /* heat ramp */
+  --heat-low: #9BD08A;
+  --heat-mid: #F3C04A;
+  --heat-high: #E4552D;
+  --heat-abstain: #A7A3C4;
+
+  --puck: #2F7FD8;
+  --route: #FFF6DE;
+
+  /* type */
+  --font-serif: 'Fraunces Variable', 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* shape */
+  --r-xs: 8px; --r-sm: 12px; --r-md: 16px; --r-lg: 22px; --r-xl: 28px; --r-pill: 999px;
+
+  /* elevation */
+  --shadow-sm: 0 1px 2px rgba(27, 42, 33, 0.05), 0 1px 1px rgba(27, 42, 33, 0.03);
+  --shadow-md: 0 10px 28px -12px rgba(27, 42, 33, 0.28), 0 2px 6px -2px rgba(27, 42, 33, 0.08);
+  --shadow-lg: 0 30px 70px -24px rgba(15, 29, 21, 0.45), 0 8px 24px -12px rgba(15, 29, 21, 0.2);
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --t-quick: 180ms;
+  --t-std: 320ms;
+  --t-slow: 520ms;
+
+  --sidebar-w: 256px;
+  --sidebar-w-rail: 76px;
+  --topbar-h: 68px;
+}

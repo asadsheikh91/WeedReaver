@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="150" viewBox="0 0 1200 150" role="img" aria-label="WeedReaver palette: cream, forest, moss, wheat, clay, slate and the heat ramp">
+  <style>.l{font:700 12px Inter,'Segoe UI',system-ui,sans-serif;letter-spacing:1px}.h{font:11px 'JetBrains Mono',ui-monospace,Consolas,monospace}</style>
+  <rect width="1200" height="150" rx="22" fill="#F5F0E6"/>
+  <rect x="1" y="1" width="1198" height="148" rx="21" fill="none" stroke="#E6DCCB" stroke-width="2"/>
+  <g>
+    <rect x="28" y="28" width="116" height="94" rx="14" fill="#FFFCF6" stroke="#E6DCCB"/><text x="42" y="92" class="l" fill="#1B2A21">IVORY</text><text x="42" y="108" class="h" fill="#566459">#FFFCF6</text>
+    <rect x="156" y="28" width="116" height="94" rx="14" fill="#ECE4D4"/><text x="170" y="92" class="l" fill="#1B2A21">CREAM</text><text x="170" y="108" class="h" fill="#566459">#F5F0E6</text>
+    <rect x="284" y="28" width="116" height="94" rx="14" fill="#143524"/><text x="298" y="92" class="l" fill="#F5F0E6">FOREST DEEP</text><text x="298" y="108" class="h" fill="#DCE6D2">#143524</text>
+    <rect x="412" y="28" width="116" height="94" rx="14" fill="#1E4A33"/><text x="426" y="92" class="l" fill="#F5F0E6">FOREST</text><text x="426" y="108" class="h" fill="#DCE6D2">#1E4A33</text>
+    <rect x="540" y="28" width="116" height="94" rx="14" fill="#4F8B5C"/><text x="554" y="92" class="l" fill="#FFFCF6">MOSS</text><text x="554" y="108" class="h" fill="#EBF0E2">#4F8B5C</text>
+    <rect x="668" y="28" width="116" height="94" rx="14" fill="#DCE6D2"/><text x="682" y="92" class="l" fill="#143524">SAGE</text><text x="682" y="108" class="h" fill="#566459">#DCE6D2</text>
+    <rect x="796" y="28" width="116" height="94" rx="14" fill="#C9983D"/><text x="810" y="92" class="l" fill="#143524">WHEAT</text><text x="810" y="108" class="h" fill="#3b2a09">#C9983D</text>
+    <rect x="924" y="28" width="116" height="94" rx="14" fill="#B9552F"/><text x="938" y="92" class="l" fill="#FFFCF6">CLAY</text><text x="938" y="108" class="h" fill="#F5E1D5">#B9552F</text>
+    <rect x="1052" y="28" width="120" height="94" rx="14" fill="#3D697D"/><text x="1066" y="92" class="l" fill="#FFFCF6">SLATE</text><text x="1066" y="108" class="h" fill="#E2EAEB">#3D697D</text>
+  </g>
+</svg>

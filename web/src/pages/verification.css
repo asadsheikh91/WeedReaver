@@ -1,0 +1,46 @@
+.ver__grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.ver__map { position: relative; height: 540px; }
+.ver__map .map { position: absolute; inset: 0; }
+.ver__chip { position: absolute; top: 14px; padding: 6px 12px; border-radius: 999px; font: 600 12px/16px var(--font-sans); z-index: 3; pointer-events: none; }
+.ver__chip--l { left: 14px; background: var(--ivory); color: var(--ink); }
+.ver__chip--r { right: 64px; background: var(--forest); color: #fff; }
+.ver__handle { position: absolute; top: 0; bottom: 0; width: 0; z-index: 4; cursor: ew-resize; touch-action: none; outline: none; }
+.ver__handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: -8px; width: 16px; }
+.ver__handle::after { content: ''; position: absolute; top: 0; bottom: 0; left: -1.5px; width: 3px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 0 14px rgba(0, 0, 0, 0.3); }
+.ver__grip { position: absolute; top: 50%; left: 0; transform: translate(-50%, -50%); width: 46px; height: 46px; border-radius: 50%; background: #fff; display: grid; place-items: center; z-index: 1; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); color: var(--ink); transition: transform var(--t-quick) var(--ease-spring); }
+.ver__handle:hover .ver__grip, .ver__handle:focus-visible .ver__grip { transform: translate(-50%, -50%) scale(1.1); }
+.ver__foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-top: 1px solid var(--line); }
+.ver__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 12px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.zrow { display: flex; align-items: center; gap: 18px; padding: 16px 22px; }
+.zrow + .zrow { border-top: 1px solid var(--line); }
+.zrow__name { width: 130px; }
+.zrow__pct { font: 700 22px/1 var(--font-sans); letter-spacing: -0.5px; width: 62px; text-align: right; }
+
+/* handover sheet */
+.sheet { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 28px; box-shadow: var(--shadow-sm); }
+.sheet__head { display: flex; align-items: center; gap: 14px; padding-bottom: 16px; border-bottom: 2px solid var(--forest); }
+.sheet__map { height: 300px; border-radius: 14px; overflow: hidden; margin: 18px 0; position: relative; }
+.sheet__map .map { position: absolute; inset: 0; }
+.sheet__zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; }
+.sheet__zone { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; font-weight: 700; }
+.sheet__zone.is-ok { background: var(--sage); color: var(--forest); }
+.sheet__zone.is-bad { background: var(--clay-bg); color: var(--clay-ink); }
+.sheet__letter { font: 700 26px/1 var(--font-serif); }
+.sheet__pct { margin-left: auto; font: 700 16px/1 var(--font-sans); }
+.sheet__legend { display: flex; gap: 22px; margin-top: 16px; font-size: 12.5px; color: var(--ink-2); }
+.sheet__legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+.sheet__foot { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); }
+.voice { display: flex; align-items: center; gap: 16px; padding: 18px 2px 4px; flex-wrap: wrap; }
+.voice__wave { display: flex; align-items: center; gap: 3px; height: 34px; flex: 1; min-width: 160px; }
+.voice__wave i { display: block; width: 3px; border-radius: 2px; background: var(--line-strong); flex: 1; max-width: 4px; }
+.voice__wave i.is-live { background: var(--forest); animation: wave 0.9s ease-in-out infinite alternate; }
+@keyframes wave { from { transform: scaleY(0.35); } to { transform: scaleY(1); } }
+
+@media print {
+  body * { visibility: hidden !important; }
+  #print-sheet, #print-sheet * { visibility: visible !important; }
+  #print-sheet { position: fixed; inset: 0; margin: 0; border: 0; box-shadow: none; padding: 18mm; }
+  .scrim { display: none !important; }
+}
+@media (max-width: 1180px) { .ver__grid { grid-template-columns: 1fr; } .ver__map { height: 460px; } }

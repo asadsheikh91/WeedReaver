@@ -1,0 +1,13 @@
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.kpi { padding: 20px 22px; display: flex; flex-direction: column; gap: 2px; min-height: 108px; }
+.kpi .stat__value { font-size: 30px; line-height: 34px; }
+.kpi__sub { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+.kpis + .split { margin-top: 32px; }
+.split { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; }
+.split + .split { margin-top: 8px; }
+.attention { text-decoration: none; }
+.attention__cta { display: inline-flex; align-items: center; gap: 4px; font: 600 13px/16px var(--font-sans); color: var(--forest-2); opacity: 0; transform: translateX(-6px); transition: all var(--t-std) var(--ease); white-space: nowrap; }
+.list-row:hover .attention__cta { opacity: 1; transform: none; }
+.field-row { text-decoration: none; }
+@media (max-width: 1280px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1080px) { .split { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

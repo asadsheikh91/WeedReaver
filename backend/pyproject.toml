@@ -1,0 +1,31 @@
+[project]
+name = "weedreaver-backend"
+version = "1.0.0"
+description = "WeedReaver API: the single backend behind the field app (Android) and the web dashboard."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0.30",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "email-validator>=2.1",
+    "pyjwt>=2.8",
+    "argon2-cffi>=23.1",
+    "numpy>=1.26",
+    "pyshp>=2.3",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27",
+    "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
