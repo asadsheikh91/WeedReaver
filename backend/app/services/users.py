@@ -22,6 +22,9 @@ from app.schemas.auth import (
 from app.services import access, ids, journal, mailer
 from app.services.devices import register_device
 
+# How long a just-rotated refresh token still counts as a retry rather than a replay.
+RETRY_GRACE = timedelta(seconds=30)
+
 
 def scope_label(u: User) -> str:
     if u.scope_all:
@@ -100,7 +103,11 @@ def refresh(db: Session, raw: str, user_agent: str | None) -> TokenOut:
     now = clock.now()
     if rt is None:
         raise Unauthorized("Invalid refresh token", code="invalid_refresh_token")
-    if rt.revoked_at is not None:
+    nxt = db.get(RefreshToken, rt.replaced_by) if rt.revoked_at is not None and rt.replaced_by else None
+    if nxt is not None and nxt.revoked_at is None and now - rt.revoked_at <= RETRY_GRACE:
+        # The answer to the last refresh was lost (the phone never saw the new token): rotate from it instead.
+        rt = nxt
+    elif rt.revoked_at is not None:
         # A rotated token came back: it was stolen or replayed. End the whole session family.
         db.execute(update(RefreshToken).where(RefreshToken.family_id == rt.family_id, RefreshToken.revoked_at.is_(None))
                    .values(revoked_at=now))
@@ -129,7 +136,9 @@ def revoke_all(db: Session, user_id: str) -> None:
                .values(revoked_at=clock.now()))
 
 
-def change_password(db: Session, user: User, current: str, new: str) -> None:
+def change_password(db: Session, user: User, current: str, new: str, *, device_id: str | None = None,
+                    user_agent: str | None = None) -> TokenOut:
+    """Signs out every session, then gives the caller a fresh one."""
     if not verify_password(current, user.password_hash):
         raise Invalid("Current password is incorrect", code="invalid_credentials")
     if current == new:
@@ -138,6 +147,8 @@ def change_password(db: Session, user: User, current: str, new: str) -> None:
     user.password_changed_at = clock.now()
     revoke_all(db, user.id)
     journal.audit(db, user, "Password changed", user.email, entity="user", entity_id=user.id)
+    a, r, ttl, _ = issue_tokens(db, user, device_id=device_id, user_agent=user_agent)
+    return token_response(user, a, r, ttl, device_id)
 
 
 # ----------------------------------------------------------------------------- invitations

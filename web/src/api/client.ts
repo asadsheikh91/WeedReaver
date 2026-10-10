@@ -23,10 +23,17 @@ export class ApiError extends Error {
 }
 
 /** Codes that mean the session is over and the user has to sign in again. */
-const SESSION_ENDED = new Set(['refresh_token_reused', 'refresh_token_expired', 'account_disabled', 'unauthorized', 'invalid_token'])
+const SESSION_ENDED = new Set(['refresh_token_reused', 'refresh_token_expired', 'invalid_refresh_token', 'account_disabled', 'token_revoked', 'unauthorized'])
 
 let session: Session | null = read()
 const listeners = new Set<() => void>()
+
+// Another tab rotated the tokens or signed out: follow it, or this tab would replay a used refresh token.
+window.addEventListener('storage', (e) => {
+  if (e.key !== STORAGE_KEY) return
+  session = read()
+  listeners.forEach((l) => l())
+})
 
 function read(): Session | null {
   try {
@@ -68,6 +75,7 @@ export const auth = {
 let refreshing: Promise<boolean> | null = null
 function refresh(): Promise<boolean> {
   if (!refreshing) {
+    session = read() ?? session // another tab may have rotated it since this one loaded
     const token = session?.refreshToken
     refreshing = (async () => {
       if (!token) return false

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
+from app.services import users
 from tests.conftest import ANALYST, API, OPERATOR, PASSWORD, TRAINEE, auth, login
 
 
@@ -22,16 +25,19 @@ def test_login_rate_limited(client):
     assert r.status_code == 429
 
 
-def test_refresh_rotation_and_reuse_detection(client):
+def test_refresh_rotation_and_reuse_detection(client, monkeypatch):
     t = login(client, OPERATOR)
     r1 = client.post(f"{API}/auth/refresh", json={"refreshToken": t["refreshToken"]})
     assert r1.status_code == 200
-    new = r1.json()
-    # The old token was rotated; presenting it again ends the whole family.
+    # The answer was lost and the phone retries with the old token: a retry, not a replay.
     r2 = client.post(f"{API}/auth/refresh", json={"refreshToken": t["refreshToken"]})
-    assert r2.status_code == 401 and r2.json()["error"]["code"] == "refresh_token_reused"
-    r3 = client.post(f"{API}/auth/refresh", json={"refreshToken": new["refreshToken"]})
-    assert r3.status_code == 401
+    assert r2.status_code == 200
+    new = r2.json()
+    # Outside the retry window, a rotated token coming back ends the whole family.
+    monkeypatch.setattr(users, "RETRY_GRACE", timedelta(0))
+    r3 = client.post(f"{API}/auth/refresh", json={"refreshToken": t["refreshToken"]})
+    assert r3.status_code == 401 and r3.json()["error"]["code"] == "refresh_token_reused"
+    assert client.post(f"{API}/auth/refresh", json={"refreshToken": new["refreshToken"]}).status_code == 401
 
 
 def test_logout_revokes(client):
@@ -58,6 +64,9 @@ def test_change_password_invalidates_tokens(client):
     r = client.post(f"{API}/auth/change-password", json={"currentPassword": PASSWORD, "newPassword": "a-much-better-one"}, headers=h)
     assert r.status_code == 200
     assert client.post(f"{API}/auth/refresh", json={"refreshToken": t["refreshToken"]}).status_code == 401
+    # The caller keeps working with the tokens it was handed back.
+    assert client.get(f"{API}/auth/me", headers=auth(r.json())).status_code == 200
+    assert client.post(f"{API}/auth/refresh", json={"refreshToken": r.json()["refreshToken"]}).status_code == 200
     assert client.post(f"{API}/auth/login", json={"email": OPERATOR, "password": "a-much-better-one"}).status_code == 200
 
 

@@ -56,11 +56,12 @@ def patch_preferences(body: PreferencesPatch, user: CurrentUser, db: DbDep) -> P
     return prefs
 
 
-@router.post("/change-password", response_model=Message)
-def change_password(body: ChangePasswordIn, user: CurrentUser, db: DbDep) -> Message:
-    users.change_password(db, user, body.current_password, body.new_password)
+@router.post("/change-password", response_model=TokenOut, summary="Signs out other sessions; returns new tokens")
+def change_password(body: ChangePasswordIn, request: Request, user: CurrentUser, db: DbDep) -> TokenOut:
+    out = users.change_password(db, user, body.current_password, body.new_password,
+                                device_id=request.state.token_device, user_agent=client_meta(request)[1])
     db.commit()
-    return Message(message="Password changed. Other sessions have been signed out.")
+    return out
 
 
 @router.post("/accept-invite", response_model=TokenOut, summary="Create an account from an invitation")

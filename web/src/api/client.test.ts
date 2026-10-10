@@ -7,15 +7,16 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const expired = () => json(401, { error: { code: 'token_expired', message: 'Access token expired' } })
 const tokens = (n: number) => ({ accessToken: `access-${n}`, refreshToken: `refresh-${n}`, expiresIn: 900, user: { id: 'U-1', email: 'a@b.pk', name: 'Analyst', role: 'ANALYST' as const, roleLabel: 'Analyst' } })
 
-let calls: { url: string; auth: string | null }[]
+let calls: { url: string; auth: string | null; body?: string }[]
+let store: Map<string, string>
 
 async function loadClient(handler: Handler) {
   calls = []
-  const store = new Map<string, string>()
-  vi.stubGlobal('window', { location: { origin: 'http://localhost:5173' } })
+  store = new Map<string, string>()
+  vi.stubGlobal('window', { location: { origin: 'http://localhost:5173' }, addEventListener: () => {} })
   vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) })
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
-    calls.push({ url, auth: (init.headers as Record<string, string>).Authorization ?? null })
+    calls.push({ url, auth: (init.headers as Record<string, string>).Authorization ?? null, body: init.body as string | undefined })
     return handler(url, init)
   }))
   vi.resetModules()
@@ -57,6 +58,19 @@ describe('api client', () => {
     })
     await Promise.all([api.get('/fields'), api.get('/surveys'), api.get('/scans')])
     expect(calls.filter((c) => c.url.endsWith('/auth/refresh'))).toHaveLength(1)
+  })
+
+  it('refreshes with the token another tab rotated, not the stale one it loaded with', async () => {
+    const { api } = await loadClient((url) => url.endsWith('/auth/refresh') ? json(200, tokens(3)) : calls.length === 1 ? expired() : json(200, []))
+    store.set('wr.session', JSON.stringify(tokens(2))) // the other tab refreshed first
+    await api.get('/fields')
+    expect(JSON.parse(calls.find((c) => c.url.endsWith('/auth/refresh'))!.body!)).toEqual({ refreshToken: 'refresh-2' })
+  })
+
+  it('ends the session when the password changed elsewhere', async () => {
+    const { api, auth } = await loadClient(() => json(401, { error: { code: 'token_revoked', message: 'Password changed; sign in again' } }))
+    await expect(api.get('/fields')).rejects.toMatchObject({ code: 'token_revoked' })
+    expect(auth.signedIn).toBe(false)
   })
 
   it('ends the session when the refresh token was already used', async () => {

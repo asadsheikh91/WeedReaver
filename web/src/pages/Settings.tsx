@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
-import { Cloud, Copy, Lock, RotateCcw, UserPlus } from 'lucide-react'
+import { Cloud, Copy, KeyRound, Lock, RotateCcw, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { fmt } from '../data/format'
-import { errorMessage } from '../api/client'
+import { api, auth, errorMessage, type TokenOut } from '../api/client'
 import { useGridStats } from '../data/queries'
 import { hasSurvey, isDecider, useStore } from '../data/store'
 import { GRID_ACTUATOR, type GridSize } from '../data/types'
@@ -10,7 +10,7 @@ import { Avatar, Button, Card, Field, Hairline, InfoButton, Modal, Pill, Segment
 import { PageHead } from './common'
 import './settings.css'
 
-const SECTIONS = [['prescription', 'Prescription'], ['grid', 'Grid and units'], ['models', 'Models'], ['team', 'Team'], ['audit', 'Audit log'], ['data', 'Data']] as const
+const SECTIONS = [['prescription', 'Prescription'], ['grid', 'Grid and units'], ['models', 'Models'], ['team', 'Team'], ['audit', 'Audit log'], ['account', 'Account'], ['data', 'Data']] as const
 
 const DASHBOARD_VERSION: string = import.meta.env.VITE_APP_VERSION ?? '0.9.4'
 const ROLES = [['ANALYST', 'Analyst'], ['OPERATOR', 'Field operator'], ['TRAINEE', 'Trainee'], ['ADMIN', 'Administrator']] as const
@@ -44,6 +44,10 @@ export default function Settings() {
   const [link, setLink] = useState<string | null>(null)
   const [inviting, setInviting] = useState(false)
   const [reloading, setReloading] = useState(false)
+  const [pw, setPw] = useState(false)
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [changing, setChanging] = useState(false)
   const [active, setActive] = useState<string>('prescription')
   const thrMin = station?.thresholdMin ?? 2, thrMax = station?.thresholdMax ?? 40
 
@@ -57,6 +61,17 @@ export default function Settings() {
       else { toast(`Invitation sent to ${inv.email}`, { tone: 'ok' }); closeInvite() }
     } catch (e) { toast(`Invitation not sent: ${errorMessage(e)}`, { tone: 'warn' }) }
     setInviting(false)
+  }
+  const closePw = () => { setPw(false); setCurrent(''); setNext('') }
+  const submitPw = async () => {
+    setChanging(true)
+    try {
+      // The server signs out every session and hands this one fresh tokens.
+      auth.accept(await api.post<TokenOut>('/auth/change-password', { currentPassword: current, newPassword: next }))
+      toast('Password changed. Other sessions have been signed out.', { tone: 'ok' })
+      closePw()
+    } catch (e) { toast(`Password not changed: ${errorMessage(e)}`, { tone: 'warn' }) }
+    setChanging(false)
   }
   const go = (id: string) => { setActive(id); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
 
@@ -132,6 +147,12 @@ export default function Settings() {
             </Card>
           </section>
 
+          <section id="account">
+            <Card pad>
+              <div className="row between"><div><h3 className="title-l">Account</h3><p className="body-s">{me ? `Signed in as ${me.email}.` : ''} Changing your password signs out every other session, including phones.</p></div><Button variant="secondary" icon={KeyRound} onClick={() => setPw(true)}>Change password</Button></div>
+            </Card>
+          </section>
+
           <section id="data">
             <Card pad>
               <div className="row between"><div><h3 className="title-l">Data</h3><p className="body-s" style={{ maxWidth: 520 }}>Everything on this dashboard lives on the station server and is shared with the phones. Reload to pick up changes made elsewhere. To restore the demonstration data, run <code className="mono">python -m app.cli seed-demo</code> on the server.</p></div><Button variant="secondary" icon={RotateCcw} loading={reloading} onClick={() => { setReloading(true); void reload().then(() => toast('Data reloaded from the station server'), (e) => toast(errorMessage(e), { tone: 'warn' })).finally(() => setReloading(false)) }}>Reload</Button></div>
@@ -155,6 +176,14 @@ export default function Settings() {
             <Field label="Role"><SelectInput value={role} onChange={(e) => setRole(e.target.value)}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</SelectInput></Field>
           </div>
         )}
+      </Modal>
+
+      <Modal open={pw} onClose={closePw} title="Change password" sub="Every other session, including phones, will need to sign in again."
+        footer={<><Button variant="ghost" onClick={closePw}>Cancel</Button><Button variant="primary" loading={changing} disabled={!current || next.length < 8} onClick={() => void submitPw()}>Change password</Button></>}>
+        <div className="col gap-16" style={{ paddingBottom: 8 }}>
+          <Field label="Current password"><TextInput type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} /></Field>
+          <Field label="New password" hint="At least 8 characters."><TextInput type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} /></Field>
+        </div>
       </Modal>
     </>
   )

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import io
 import zipfile
+from datetime import date, datetime
 from xml.etree import ElementTree as ET
 
 import shapefile
 
+from app.core import clock
 from app.domain import geo
 from tests.conftest import API
 
@@ -46,7 +48,8 @@ def test_sync_push_applies_dedupes_and_rejects_by_ownership(client, phone, analy
     ledger = client.get(f"{API}/sync/changes?deviceId=D-01&status=rejected", headers=analyst).json()
     assert ledger["total"] == 3 and all(c["owner"] == "phone" for c in ledger["items"] if c["entity"] != "settings")
     devices = {d["id"]: d for d in client.get(f"{API}/devices", headers=analyst).json()}
-    assert devices["D-01"]["pendingChanges"] == 0 and devices["D-01"]["lastSyncAt"].startswith("2027-01-22")
+    synced = clock.local_date(datetime.fromisoformat(devices["D-01"]["lastSyncAt"].replace("Z", "+00:00")))
+    assert devices["D-01"]["pendingChanges"] == 0 and synced == date(2027, 1, 22)  # station day, not the UTC one
 
 
 def test_sync_requires_the_operators_own_device(client, analyst, operator):
