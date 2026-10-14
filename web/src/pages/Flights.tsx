@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Check, Cpu, FileImage, Layers, PlaneTakeoff, Upload } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Check, Cpu, FileImage, Layers, Map as MapIcon, PlaneTakeoff, Trash2, Upload } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { fmt } from '../data/format'
 import { errorMessage } from '../api/client'
-import { hasSurvey, isDecider, useStore } from '../data/store'
+import { FlightRefused, hasSurvey, isDecider, surveysOf, useStore } from '../data/store'
 import { SURVEY_ROLE, SURVEY_STATUS, type Survey, type SurveyRole } from '../data/types'
-import { Button, Card, Field, Meter, Modal, Pill, Ring, SectionHead, SelectInput, Segmented, Stat, cx } from '../ui/kit'
+import { Button, Card, Field, Meter, Modal, Notice, Pill, Ring, SectionHead, SelectInput, Segmented, Stat, cx } from '../ui/kit'
 import { FieldThumb, PageHead } from './common'
 import './fields.css'
 import './flights.css'
@@ -77,7 +77,12 @@ export default function Flights() {
                   <td className="num">{s.gsdCm ? `${s.gsdCm} cm/px` : '—'}</td>
                   <td className="ink-2" style={{ fontSize: 13 }}>{s.sensor.replace(' · 20 MP RGB', '')}</td>
                   <td><StatusPill s={s} /></td>
-                  <td className="num">{s.status === 'READY' && s.role === 'PRE' ? <Link to={`/app/weed-map/${field.id}`} className="link-btn">Weed map <ArrowRight size={13} /></Link> : s.status === 'READY' ? <Link to={`/app/verification/${field.id}`} className="link-btn">Verify <ArrowRight size={13} /></Link> : null}</td>
+                  <td className="num">
+                    <div className="row gap-12" style={{ justifyContent: 'flex-end' }}>
+                      {s.hasOrthomosaic && <Link to={`/app/map?field=${field.id}&flight=${s.id}`} className="link-btn"><MapIcon size={13} /> Map</Link>}
+                      {s.status === 'READY' && s.role === 'PRE' ? <Link to={`/app/weed-map/${field.id}`} className="link-btn">Weed map <ArrowRight size={13} /></Link> : s.status === 'READY' ? <Link to={`/app/verification/${field.id}`} className="link-btn">Verify <ArrowRight size={13} /></Link> : null}
+                    </div>
+                  </td>
                 </motion.tr>
               ))}
             </tbody>
@@ -134,40 +139,71 @@ function LiveJob({ s, name }: { s: Survey; name: string }) {
 
 /* ------------------------------------------------------------------ upload */
 
-function UploadModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** The first survey role a field still needs: pre-treatment, then the follow-ups. */
+function nextRole(list: Survey[]): SurveyRole {
+  const held = (r: SurveyRole) => list.some((s) => s.role === r && s.status !== 'SCHEDULED' && s.status !== 'FAILED')
+  return !held('PRE') ? 'PRE' : !held('PLUS_14D') ? 'PLUS_14D' : 'PLUS_28D'
+}
+
+export function UploadModal({ open, onClose, fieldId: preset }: { open: boolean; onClose: () => void; fieldId?: string }) {
   const fields = useStore((s) => s.fields)
+  const seasons = useStore((s) => s.seasons)
+  const surveys = useStore((s) => s.surveys)
   const upload = useStore((s) => s.uploadFlight)
+  const clearImages = useStore((s) => s.clearFlightImages)
   const toast = useStore((s) => s.toast)
-  // default to the first parcel still waiting for its pre-treatment survey
+  // default to the given field, else the first parcel still waiting for its pre-treatment survey
   const firstUnsurveyed = useStore((s) => s.fields.find((f) => !hasSurvey(s, f.id))?.id)
-  const [fieldId, setFieldId] = useState(firstUnsurveyed ?? fields[0]?.id ?? '')
+  const [fieldId, setFieldId] = useState(preset ?? firstUnsurveyed ?? fields[0]?.id ?? '')
   const [role, setRole] = useState<SurveyRole>('PRE')
   const [files, setFiles] = useState<{ count: number; name: string; mb: number; list: File[] | null } | null>(null)
   const [over, setOver] = useState(false)
   const [sending, setSending] = useState<number | null>(null)
+  const [problem, setProblem] = useState<{ message: string; surveyId?: string } | null>(null)
+  const [clearing, setClearing] = useState(false)
   const input = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { if (open) { setFiles(null); setOver(false); setSending(null) } }, [open])
+  useEffect(() => {
+    if (!open) return
+    const id = preset ?? firstUnsurveyed ?? fields[0]?.id ?? ''
+    setFieldId(id); setRole(nextRole(surveysOf({ seasons, surveys }, id)))
+    setFiles(null); setOver(false); setSending(null); setProblem(null)
+  }, [open]) // reset once per opening, not on every store change
 
+  const pickField = (id: string) => { setFieldId(id); setRole(nextRole(surveysOf({ seasons, surveys }, id))); setProblem(null) }
   const take = (list: FileList | File[]) => {
     const arr = [...list]
     if (!arr.length) return
     const mb = arr.reduce((n, f) => n + f.size, 0) / 1e6
+    setProblem(null)
     setFiles({ count: arr.length, name: arr.length === 1 ? arr[0].name : `${arr.length} files`, mb, list: arr })
   }
   const field = fields.find((f) => f.id === fieldId) ?? fields[0]
   const start = async () => {
-    if (!files) return
-    setSending(0)
+    if (!files || !field) return
+    setSending(0); setProblem(null)
     try {
       await upload({ fieldId, role, files: files.list, simulateImages: files.list ? undefined : files.count, name: files.name, onProgress: setSending })
-      toast(`${field.name}: upload finished. Processing appears under Processing now.`)
+      toast(`${field.name}: upload finished. Processing has started; the orthomosaic appears on the map when it is ready.`, { tone: 'ok' })
       onClose()
     } catch (e) {
-      toast(`Upload failed: ${errorMessage(e)}`, { tone: 'warn' })
+      setProblem(e instanceof FlightRefused ? { message: e.message, surveyId: e.surveyId } : { message: errorMessage(e) })
       setSending(null)
     }
   }
+  const startOver = async () => {
+    if (!problem?.surveyId) return
+    setClearing(true)
+    try {
+      await clearImages(problem.surveyId)
+      setProblem(null); setFiles(null)
+      toast('Uploaded images removed. Choose the right files and upload again.')
+    } catch (e) {
+      setProblem({ ...problem, message: errorMessage(e) })
+    }
+    setClearing(false)
+  }
+  if (!field) return null
 
   return (
     <Modal open={open} onClose={onClose} wide title="Upload a flight" sub="Drop the images from the SD card. Processing runs on the station server and continues if you leave this page."
@@ -179,7 +215,7 @@ function UploadModal({ open, onClose }: { open: boolean; onClose: () => void }) 
         <div className="row gap-16 wrap">
           <div className="grow" style={{ minWidth: 220 }}>
             <Field label="Field">
-              <SelectInput value={fieldId} onChange={(e) => setFieldId(e.target.value)}>
+              <SelectInput value={fieldId} disabled={sending !== null} onChange={(e) => pickField(e.target.value)}>
                 {fields.map((f) => <option key={f.id} value={f.id}>{f.name} · {f.id}</option>)}
               </SelectInput>
             </Field>
@@ -206,7 +242,7 @@ function UploadModal({ open, onClose }: { open: boolean; onClose: () => void }) 
             <>
               <div className="icon-tile"><FileImage /></div>
               <div className="title-s">Drop the flight images here</div>
-              <div className="body-s">JPEG or DNG from the drone, or a zipped folder</div>
+              <div className="body-s">The original JPEG or DNG files from the drone (they carry the GPS position), or a zipped folder</div>
             </>
           )}
           <input ref={input} type="file" multiple accept="image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff,.dng,.zip" hidden onChange={(e) => e.target.files && take(e.target.files)} />
@@ -217,7 +253,17 @@ function UploadModal({ open, onClose }: { open: boolean; onClose: () => void }) 
             <span className="caption">The station simulates a {role === 'PRE' ? 287 : 281}-image flight so the demo needs no files (development servers only).</span>
           </div>
         )}
-        <div className="fl-note"><Layers size={16} /><span>Zones for <b>{field.name}</b> are regenerated when processing finishes, and published to phones on their next sync.</span></div>
+        {problem && (
+          <Notice tone="clay" icon={AlertTriangle} title={problem.surveyId ? 'The images were uploaded, but processing could not start' : 'The upload did not finish'}
+            action={problem.surveyId ? (
+              <div className="row gap-8 mt-12">
+                <Button size="sm" variant="secondary" icon={Trash2} loading={clearing} onClick={() => void startOver()}>Remove uploaded images</Button>
+              </div>
+            ) : undefined}>
+            {problem.message}{problem.surveyId ? '' : ' Upload again: files the station already received are skipped.'}
+          </Notice>
+        )}
+        <div className="fl-note"><Layers size={16} /><span>OpenDroneMap stitches the images into an orthomosaic of <b>{field.name}</b>, shown on the Map once it is ready. Zones are regenerated and published to phones on their next sync.</span></div>
       </div>
     </Modal>
   )

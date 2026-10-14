@@ -81,6 +81,10 @@ export interface Survey {
   altitudeM: number; sensor: string; gsdCm: number; status: SurveyStatus
   images: number; progress: number; source?: string; stage?: string
   fieldId?: string; error?: string
+  /** A stitched orthomosaic exists and can be shown on the map. */
+  hasOrthomosaic?: boolean
+  processedAt?: number
+  imageBytes?: number
 }
 
 export interface GridCell {

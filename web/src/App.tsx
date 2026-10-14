@@ -7,6 +7,7 @@ const Devices = lazy(() => import('./pages/Devices'))
 const Exports = lazy(() => import('./pages/Exports'))
 const FieldDetail = lazy(() => import('./pages/FieldDetail'))
 const Fields = lazy(() => import('./pages/Fields'))
+const FieldsMap = lazy(() => import('./pages/FieldsMap'))
 const Flights = lazy(() => import('./pages/Flights'))
 const Landing = lazy(() => import('./pages/Landing'))
 const Overview = lazy(() => import('./pages/Overview'))
@@ -30,6 +31,7 @@ export default function App() {
           <Route index element={<Overview />} />
           <Route path="fields" element={<Fields />} />
           <Route path="fields/:fieldId" element={<FieldDetail />} />
+          <Route path="map" element={<FieldsMap />} />
           <Route path="weed-map/:fieldId?" element={<WeedMap />} />
           <Route path="flights" element={<Flights />} />
           <Route path="review" element={<Review />} />
