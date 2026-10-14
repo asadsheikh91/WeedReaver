@@ -3,13 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, File, Query, UploadFile, status
+from fastapi import APIRouter, File, Path, Query, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.api.deps import CurrentUser, DbDep
+from app.core.errors import Conflict, NotFound
 from app.domain.enums import SurveyRole
+from app.pipeline import orthotiles
 from app.schemas.common import ApiModel, Message
-from app.schemas.surveys import JobOut, ProcessIn, SurveyCreate, SurveyOut, SurveyPatch, UploadResult
+from app.schemas.surveys import (
+    FlightImagesOut, JobOut, OrthomosaicOut, ProcessIn, SurveyCreate, SurveyOut, SurveyPatch, UploadResult,
+)
 from app.services import surveys
 
 router = APIRouter(prefix="/surveys", tags=["flights"])
@@ -73,6 +77,19 @@ def add_images(survey_id: str, user: CurrentUser, db: DbDep, files: Annotated[li
     return out
 
 
+@router.get("/{survey_id}/images", response_model=FlightImagesOut,
+            summary="Images uploaded so far: names and sizes (to resume an upload), GPS coverage and distance from the field")
+def list_images(survey_id: str, user: CurrentUser, db: DbDep) -> FlightImagesOut:
+    return surveys.flight_images(db, surveys.get_survey(db, user, survey_id))
+
+
+@router.delete("/{survey_id}/images", response_model=Message, summary="Remove every uploaded image, to start the upload again")
+def clear_images(survey_id: str, user: CurrentUser, db: DbDep) -> Message:
+    surveys.clear_images(db, user, surveys.get_survey(db, user, survey_id))
+    db.commit()
+    return Message(message=f"Images of flight {survey_id} removed")
+
+
 @router.post("/{survey_id}/process", response_model=JobOut, status_code=status.HTTP_202_ACCEPTED,
              summary="Step 3: queue photogrammetry, segmentation and zoning. Poll the flight for progress")
 def process(survey_id: str, user: CurrentUser, db: DbDep, body: ProcessIn | None = None) -> JobOut:
@@ -93,3 +110,35 @@ def orthomosaic(survey_id: str, user: CurrentUser, db: DbDep) -> FileResponse:
     s = surveys.get_survey(db, user, survey_id)
     path = surveys.orthomosaic_path(s)
     return FileResponse(path, filename=f"{s.id}_orthomosaic{path.suffix}")
+
+
+@router.get("/{survey_id}/orthomosaic/info", response_model=OrthomosaicOut,
+            summary="Where the orthomosaic lies and how to show it on a web map (XYZ tiles)")
+def orthomosaic_info(survey_id: str, user: CurrentUser, db: DbDep) -> OrthomosaicOut:
+    return surveys.orthomosaic_out(surveys.get_survey(db, user, survey_id))
+
+
+#: Tiles are addressed by the flight's processing version (?v=), so a browser may keep them.
+_TILE_CACHE = "private, max-age=604800"
+
+
+@router.get("/{survey_id}/orthomosaic/tiles/{z}/{x}/{y}.{fmt}", summary="One 256 px Web Mercator tile of the orthomosaic",
+            responses={200: {"content": {"image/webp": {}, "image/png": {}}}, 204: {"description": "No imagery in this tile"}},
+            response_class=Response)
+def orthomosaic_tile(
+    survey_id: str, user: CurrentUser, db: DbDep,
+    z: Annotated[int, Path(ge=0, le=orthotiles.MAX_REQUEST_ZOOM)], x: Annotated[int, Path(ge=0)], y: Annotated[int, Path(ge=0)],
+    fmt: Literal["webp", "png"],
+) -> Response:
+    if not orthotiles.tile_in_range(z, x, y):
+        raise NotFound("No such tile")
+    s = surveys.get_survey(db, user, survey_id)
+    path = surveys.orthomosaic_path(s)
+    db.close()  # release the connection before the (comparatively slow) raster read
+    try:
+        data = orthotiles.render_tile(path, z, x, y, fmt)
+    except orthotiles.OrthomosaicUnreadable as exc:
+        raise Conflict(str(exc)) from exc
+    if data is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT, headers={"Cache-Control": _TILE_CACHE})
+    return Response(content=data, media_type=f"image/{fmt}", headers={"Cache-Control": _TILE_CACHE})

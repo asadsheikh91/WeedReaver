@@ -36,20 +36,35 @@ def test_field_detail(client, analyst):
     assert client.get(f"{API}/fields/F-999", headers=analyst).status_code == 404
 
 
-def test_create_field_from_latlon_idempotent(client, operator):
-    body = {
-        "clientId": "phone-field-0001", "name": "Tubewell killa", "captureMethod": "Walked", "simplifyToleranceM": 2,
-        "boundaryLatLon": [{"lat": 31.8967, "lon": 73.2741}, {"lat": 31.89674, "lon": 73.27534},
-                           {"lat": 31.89588, "lon": 73.2754}, {"lat": 31.89585, "lon": 73.27412}],
-    }
-    r = client.post(f"{API}/fields", json=body, headers=operator)
+TUBEWELL = {
+    "clientId": "field-0001", "name": "Tubewell killa", "captureMethod": "Drawn", "simplifyToleranceM": 2,
+    "boundaryLatLon": [{"lat": 31.8967, "lon": 73.2741}, {"lat": 31.89674, "lon": 73.27534},
+                       {"lat": 31.89588, "lon": 73.2754}, {"lat": 31.89585, "lon": 73.27412}],
+}
+
+
+def test_create_field_from_latlon_idempotent(client, analyst):
+    r = client.post(f"{API}/fields", json=TUBEWELL, headers=analyst)
     assert r.status_code == 201, r.text
     f = r.json()
-    assert f["id"].startswith("F-9") and f["captureMethod"] == "Walked" and 2.0 < f["area"]["acres"] < 3.5
+    assert f["id"].startswith("F-9") and f["captureMethod"] == "Drawn" and 2.0 < f["area"]["acres"] < 3.5
     assert min(p["x"] for p in f["boundary"]) == 0 and min(p["y"] for p in f["boundary"]) == 0
     assert f["nextSurvey"]["role"] == "PRE" and f["season"]["season"] == "Rabi 2026-27"
-    again = client.post(f"{API}/fields", json=body, headers=operator)
+    again = client.post(f"{API}/fields", json=TUBEWELL, headers=analyst)
     assert again.status_code == 200 and again.json()["id"] == f["id"]
+
+
+def test_only_deciders_add_fields(client, admin, operator, trainee, phone):
+    for who in (operator, trainee):
+        r = client.post(f"{API}/fields", json=TUBEWELL, headers=who)
+        assert r.status_code == 403 and r.json()["error"]["code"] == "ownership_violation"
+    # Nor through a phone's offline sync: the change is rejected, with the reason, and nothing is created.
+    change = {"clientSeq": 901, "entity": "field", "op": "create", "payload": {**TUBEWELL, "clientId": "walked-1"}}
+    out = client.post(f"{API}/sync/push", json={"changes": [change]}, headers=phone).json()
+    assert out["results"][0]["status"] == "rejected" and "analyst or administrator" in out["results"][0]["reason"]
+    assert all(f["name"] != "Tubewell killa" for f in client.get(f"{API}/fields", headers=admin).json())
+    # An administrator decides like an analyst.
+    assert client.post(f"{API}/fields", json=TUBEWELL, headers=admin).status_code == 201
 
 
 def test_create_field_rejects_bad_geometry(client, analyst):
@@ -86,12 +101,13 @@ def test_boundary_edit_is_a_definition(client, operator, analyst):
     assert round(r.json()["area"]["sqm"]) == 182 * 80
 
 
-def test_rename_needs_decider_or_capturer(client, operator, analyst):
+def test_rename_needs_decider(client, operator, analyst):
     assert client.patch(f"{API}/fields/F-047", json={"name": "Chak 48"}, headers=operator).status_code == 403
-    body = {"clientId": "phone-field-rename", "name": "Mine", "boundary": [{"x": 0, "y": 0}, {"x": 60, "y": 0},
+    body = {"clientId": "field-rename", "name": "Mine", "boundary": [{"x": 0, "y": 0}, {"x": 60, "y": 0},
             {"x": 60, "y": 60}, {"x": 0, "y": 60}], "lat": 31.9, "lon": 73.27, "captureMethod": "Drawn"}
-    fid = client.post(f"{API}/fields", json=body, headers=operator).json()["id"]
-    r = client.patch(f"{API}/fields/{fid}", json={"name": "Mine, renamed"}, headers=operator)
+    fid = client.post(f"{API}/fields", json=body, headers=analyst).json()["id"]
+    assert client.patch(f"{API}/fields/{fid}", json={"name": "Not mine"}, headers=operator).status_code == 403
+    r = client.patch(f"{API}/fields/{fid}", json={"name": "Mine, renamed"}, headers=analyst)
     assert r.status_code == 200 and r.json()["name"] == "Mine, renamed"
 
 

@@ -150,6 +150,12 @@ def operator(client) -> dict:
     return auth(login(client, OPERATOR))
 
 
+@pytest.fixture
+def trainee(client) -> dict:
+    """A trainee assigned to one field only (F-203)."""
+    return auth(login(client, TRAINEE))
+
+
 def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     reset_engine()
     shutil.rmtree(_TMP, ignore_errors=True)

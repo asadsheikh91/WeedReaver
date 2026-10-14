@@ -24,6 +24,7 @@ from app.core.config import get_settings
 from app.db.session import session_scope
 from app.domain.enums import JobStatus, SurveyRole, SurveyStatus
 from app.models import ProcessingJob, Survey, SurveyImage, TreatmentZone
+from app.pipeline import orthotiles
 from app.pipeline.base import (
     FlightInputs, OrthomosaicEngine, OrthomosaicResult, PipelineError, SegmentationEngine, SegmentationInputs, load_engine,
 )
@@ -170,6 +171,13 @@ def run(job_id: str) -> bool:
             dest.parent.mkdir(parents=True, exist_ok=True)
             if ortho.path.resolve() != dest.resolve():
                 shutil.copyfile(ortho.path, dest)
+            try:  # the same reader the map uses: a mosaic that cannot be shown must not reach READY
+                orthotiles.describe(dest)
+            except orthotiles.OrthomosaicUnreadable as exc:
+                # Drop the bad file so a retry stitches again instead of reusing it.
+                dest.unlink(missing_ok=True)
+                ortho.path.unlink(missing_ok=True)
+                raise PipelineError(f"The orthomosaic cannot be shown on a map: {exc}") from exc
 
         seg_step = _Progress(job_id, survey_id, "Segmentation")
         with session_scope() as db:
