@@ -188,7 +188,9 @@ The field app passes `device: {installId, name, model, os, appVersion}` at login
 UUID generated once per install). The response's `deviceId` goes in `X-Device-ID` on later calls.
 
 Roles: `ADMIN`, `ANALYST` (decide: the dashboard), `OPERATOR`, `TRAINEE` (observe: the phone). Users
-can be scoped to some fields; everything attached to a field follows its visibility.
+can be scoped to some fields; everything attached to a field follows its visibility. Adding a field
+and uploading a flight are decisions: an operator or trainee gets `403 ownership_violation`, including
+for a `field.create` pushed through offline sync (it comes back `rejected`).
 
 ### Dashboard endpoints (by page)
 
@@ -197,7 +199,8 @@ can be scoped to some fields; everything attached to a field follows its visibil
 | Overview | `GET /overview` (stats, ranked `needsAttention`, field summaries, recent activity), `GET /season` |
 | Fields | `GET /fields`, `GET /fields/{id}`, `POST /fields/parse-boundary` (multipart) then `POST /fields`, `PATCH`/`DELETE /fields/{id}` |
 | Weed map | `GET /fields/{id}/grid?size=&threshold=` (columnar), `/grid/stats` (for the slider), `/grid/compare`, `/grid/cell?x=&y=`, `/zones`, `/zones/preview?threshold=`, `PUT /settings/threshold` (publish) |
-| Flights | `GET /surveys`, `POST /surveys` (schedule), `POST /surveys/uploads` → `POST /surveys/{id}/images` (batches, zip ok) → `POST /surveys/{id}/process`; poll `GET /surveys/{id}` for `progress`/`stage` |
+| Flights | `GET /surveys`, `POST /surveys` (schedule), `POST /surveys/uploads` → `GET /surveys/{id}/images` (what is already held, to resume) → `POST /surveys/{id}/images` (batches, zip ok; a file with the same name and size is skipped as a duplicate) → `POST /surveys/{id}/process`; poll `GET /surveys/{id}` for `progress`/`stage`. `DELETE /surveys/{id}/images` starts an upload over. With the ODM engine, `process` answers 422 when the flight has fewer than `WR_MIN_FLIGHT_IMAGES`, when fewer than half its images carry EXIF GPS, or when their mean position is more than `WR_MAX_FLIGHT_OFFSET_M` from the field |
+| Map | `GET /fields`, `GET /surveys`; for each flight with `hasOrthomosaic`: `GET /surveys/{id}/orthomosaic/info` (WGS84 bounds, native zoom, `tileUrl`), then `GET /surveys/{id}/orthomosaic/tiles/{z}/{x}/{y}.webp` (or `.png`; `204` where nothing was stitched; cacheable, versioned by `?v=`). `GET /surveys/{id}/orthomosaic` downloads the GeoTIFF |
 | Review queue | `GET /review/summary`, `GET /scans?status=NEEDS_LABEL`, `POST /scans/{id}/resolve`, `/reopen`, `GET /scans/{id}/photo`, `GET /review/cells` |
 | Treatments | `GET /treatments?fieldId=&hrac=&from=&to=&season=`, `GET /treatments/{id}` |
 | Rotation | `GET /fields/{id}/rotation` (trend, streak, risk, warning, alternatives) |
@@ -255,6 +258,7 @@ The phone keeps its change log as it does today and, when it has signal:
 Every setting is an environment variable prefixed `WR_`; `.env.example` lists the useful ones and
 `app/core/config.py` all of them. Notable: `WR_DATABASE_URL`, `WR_SECRET_KEY`, `WR_CORS_ORIGINS`,
 `WR_STORAGE_DIR`, `WR_DEMO_CLOCK_DATE`, the two engine paths, `WR_EMBEDDED_WORKER`,
+`WR_MIN_FLIGHT_IMAGES` and `WR_MAX_FLIGHT_OFFSET_M` (checks before photogrammetry),
 `WR_WEATHER_PROVIDER` (`static` or live `open-meteo`) and `WR_MAIL_BACKEND` (`console` or `smtp`
 for invitations and password resets; without mail, the invitation link is returned to the inviter).
 

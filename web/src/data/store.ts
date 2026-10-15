@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import { api, auth, errorMessage, type SessionUser } from '../api/client'
+import { ApiError, api, auth, errorMessage, type SessionUser } from '../api/client'
 import type {
-  AuditDto, BoundaryPreviewDto, ChangeDto, DeviceDto, ExportDto, ExportPreviewDto, FieldDto, InvitationDto, PageDto, ProductDto, ScanDto,
-  SpeciesDto, StationDto, SurveyDto, ThresholdDto, TreatmentDto, UserDto, ZoneDto,
+  AuditDto, BoundaryPreviewDto, ChangeDto, DeviceDto, ExportDto, ExportPreviewDto, FieldDto, FlightImagesDto, InvitationDto, PageDto,
+  ProductDto, ScanDto, SpeciesDto, StationDto, SurveyDto, ThresholdDto, TreatmentDto, UploadResultDto, UserDto, ZoneDto,
 } from '../api/dto'
 import {
   patchesFromZones, toAudit, toChange, toDevice, toExport, toField, toProduct, toScan, toSeason, toSpecies, toSurvey,
@@ -71,7 +71,8 @@ interface State {
   dismissToast(id: number): void
   setPalette(open: boolean): void
 
-  uploadFlight(a: { fieldId: string; role: SurveyRole; files: File[] | null; simulateImages?: number; name: string; onProgress?: (f: number) => void }): Promise<string>
+  uploadFlight(a: { fieldId: string; role: SurveyRole; files: File[] | null; simulateImages?: number; name: string; onProgress?: (f: number) => void; signal?: AbortSignal }): Promise<string>
+  clearFlightImages(surveyId: string): Promise<void>
   resolveScan(id: string, species: string, note?: string): Promise<void>
   reopenScan(id: string): Promise<void>
   parseBoundary(file: File): Promise<BoundaryPreviewDto>
@@ -201,29 +202,53 @@ export const useStore = create<State>((set, get) => ({
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   setPalette: (open) => set({ paletteOpen: open }),
 
-  async uploadFlight({ fieldId, role, files, simulateImages, name, onProgress }) {
-    // 1 open (or reuse the scheduled) flight, 2 send images in batches, 3 queue processing
+  async uploadFlight({ fieldId, role, files, simulateImages, name, onProgress, signal }) {
+    // 1 open (or reuse) the flight, 2 send the images the station does not hold yet, 3 queue processing
     const opened = await api.post<SurveyDto>('/surveys/uploads', { fieldId, role })
     upsertSurvey(opened)
     if (files?.length) {
       const total = files.reduce((n, f) => n + f.size, 0) || 1
-      let sent = 0
-      for (const batch of batches(files, 24, 96e6)) {
-        const form = new FormData()
-        batch.forEach((f) => form.append('files', f, f.name))
+      // Resume: an earlier attempt may have delivered some files already (same name and size).
+      const held = await api.get<FlightImagesDto>(`/surveys/${opened.id}/images`)
+      const have = new Set(held.files.map((f) => `${f.filename}|${f.sizeBytes}`))
+      const todo = files.filter((f) => !have.has(`${storedName(f.name)}|${f.size}`))
+      let sent = total - todo.reduce((n, f) => n + f.size, 0)
+      onProgress?.(sent / total)
+      const rejected: { file: string; reason: string }[] = []
+      for (const batch of batches(todo, 24, 96e6)) {
+        signal?.throwIfAborted()
         const size = batch.reduce((n, f) => n + f.size, 0)
-        const r = await api.upload<{ received: number; rejected: { file: string; reason: string }[] }>(`/surveys/${opened.id}/images`, form,
-          (k) => onProgress?.((sent + k * size) / total))
+        const r = await withRetry(() => {
+          const form = new FormData()
+          batch.forEach((f) => form.append('files', f, f.name))
+          return api.upload<UploadResultDto>(`/surveys/${opened.id}/images`, form, (k) => onProgress?.((sent + k * size) / total))
+        }, signal)
         sent += size
-        if (r.rejected.length) get().toast(`${r.rejected.length} file${r.rejected.length > 1 ? 's' : ''} skipped: ${r.rejected[0].reason}`, { tone: 'warn' })
+        onProgress?.(sent / total)
+        rejected.push(...r.rejected)
+      }
+      if (rejected.length) {
+        const reasons = [...new Set(rejected.map((x) => x.reason))]
+        get().toast(`${fmtCount(rejected.length, 'file')} skipped: ${reasons.slice(0, 2).join('; ')}`, { tone: 'warn' })
       }
     }
-    await api.post(`/surveys/${opened.id}/process`, files?.length ? { source: name } : { simulateImages, source: name })
+    try {
+      await api.post(`/surveys/${opened.id}/process`, files?.length ? { source: name } : { simulateImages, source: name })
+    } catch (e) {
+      upsertSurvey(await api.get<SurveyDto>(`/surveys/${opened.id}`))
+      throw new FlightRefused(opened.id, e)
+    }
     upsertSurvey(await api.get<SurveyDto>(`/surveys/${opened.id}`))
     startPolling()
     void refreshAudit()
     invalidate('overview', 'season')
     return opened.id
+  },
+
+  async clearFlightImages(surveyId) {
+    await api.del(`/surveys/${surveyId}/images`)
+    upsertSurvey(await api.get<SurveyDto>(`/surveys/${surveyId}`))
+    void refreshAudit()
   },
 
   async resolveScan(id, species, note) {
@@ -332,6 +357,32 @@ async function refreshAudit() {
     const a = await api.get<PageDto<AuditDto>>('/audit', { limit: 50 })
     useStore.setState({ audit: a.items.map(toAudit) })
   } catch { /* not every role reads the audit log */ }
+}
+
+/** The images were stored but the station would not start processing them (no GPS, wrong field...). */
+export class FlightRefused extends Error {
+  constructor(readonly surveyId: string, readonly cause: unknown) {
+    super(errorMessage(cause))
+  }
+}
+
+/** The name the station stores a file under (mirrors the API's safe_name), to recognise files it holds. */
+export function storedName(name: string): string {
+  const base = (name.split('/').pop() ?? '').trim() || 'file'
+  return base.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 120).replace(/^[._]+|[._]+$/g, '') || 'file'
+}
+
+/** A batch that failed in transit (no answer, a gateway error, rate limiting) is sent again, up to three times. */
+async function withRetry<T>(send: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await send()
+    } catch (e) {
+      const transient = e instanceof ApiError && (e.status === 0 || e.status === 429 || e.status >= 500)
+      if (!transient || attempt >= 3 || signal?.aborted) throw e
+      await new Promise((r) => setTimeout(r, 1000 * 3 ** attempt))
+    }
+  }
 }
 
 function* batches(files: File[], count: number, bytes: number) {

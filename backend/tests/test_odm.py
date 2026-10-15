@@ -21,8 +21,12 @@ from app.pipeline.base import FlightInputs
 from app.pipeline.orthomosaic import NodeODMOrthomosaicEngine, boundary_geojson, odm_options
 from app.pipeline.runner import run_pending
 from tests.conftest import API
+from tests.imaging import JPEG_NO_GPS as JPEG
+from tests.imaging import flight_jpegs, write_orthophoto
 
-JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64 + b"\xff\xd9"
+#: Where the test field lies, and the pixel size of the orthophoto the fake node returns.
+FIELD_LAT, FIELD_LON = 31.9, 73.27
+ORTHO_GSD_M = 0.25
 
 
 # ----------------------------------------------------------------------------- a GeoTIFF on disk
@@ -152,7 +156,11 @@ class FakeTask:
         return self.output_lines
 
     def download_assets(self, destination, progress_callback=None, **_):
-        write_geotiff(Path(destination) / "odm_orthophoto" / "odm_orthophoto.tif")
+        out = Path(destination) / "odm_orthophoto" / "odm_orthophoto.tif"
+        if self.node.header_only:  # a file whose header parses but whose pixels cannot be read
+            write_geotiff(out)
+        else:
+            write_orthophoto(out, FIELD_LAT, FIELD_LON, gsd_m=ORTHO_GSD_M)
         if progress_callback:
             progress_callback(100.0)
         self.node.downloads += 1
@@ -167,8 +175,9 @@ class FakeTask:
 
 
 class FakeNode:
-    def __init__(self, script, after_restart=None, info_error: Exception | None = None):
+    def __init__(self, script, after_restart=None, info_error: Exception | None = None, header_only: bool = False):
         self.script, self.after_restart = script, after_restart or [(TaskStatus.COMPLETED, 100)]
+        self.header_only = header_only
         self.info_error = info_error
         self.tasks: dict[str, FakeTask] = {}
         self.created: list[dict] = []
@@ -211,14 +220,18 @@ def odm(monkeypatch):
     return use
 
 
-def _flight_with_images(client, analyst, operator, name="ODM field"):
+def _flight_with_images(client, analyst, operator=None, name="ODM field"):
     body = {"clientId": f"odm-{name}", "name": name, "captureMethod": "Drawn",
-            "boundary": [{"x": 0, "y": 0}, {"x": 140, "y": 0}, {"x": 140, "y": 100}, {"x": 0, "y": 100}], "lat": 31.9, "lon": 73.27}
-    fid = client.post(f"{API}/fields", json=body, headers=operator).json()["id"]
+            "boundary": [{"x": 0, "y": 0}, {"x": 140, "y": 0}, {"x": 140, "y": 100}, {"x": 0, "y": 100}],
+            "lat": FIELD_LAT, "lon": FIELD_LON}
+    fid = client.post(f"{API}/fields", json=body, headers=analyst).json()["id"]
     sid = client.post(f"{API}/surveys/uploads", json={"fieldId": fid, "role": "PRE"}, headers=analyst).json()["id"]
-    files = [("files", (f"DJI_{k:04d}.JPG", JPEG, "image/jpeg")) for k in range(3)]
-    assert client.post(f"{API}/surveys/{sid}/images", files=files, headers=analyst).json()["received"] == 3
-    assert client.post(f"{API}/surveys/{sid}/process", json={}, headers=analyst).status_code == 202
+    # one pass across the field, 30 m in from its north edge
+    files = [("files", (n, b, "image/jpeg")) for n, b in flight_jpegs(FIELD_LAT - 0.00027, FIELD_LON + 0.0001, n=6)]
+    up = client.post(f"{API}/surveys/{sid}/images", files=files, headers=analyst).json()
+    assert up["received"] == 6 and up["withGps"] == 6
+    r = client.post(f"{API}/surveys/{sid}/process", json={}, headers=analyst)
+    assert r.status_code == 202, r.text
     return fid, sid
 
 
@@ -228,11 +241,11 @@ def test_flight_is_stitched_by_odm_end_to_end(client, analyst, operator, odm):
     run_pending()
     s = client.get(f"{API}/surveys/{sid}", headers=analyst).json()
     assert s["status"] == "READY", s["error"]
-    assert s["hasOrthomosaic"] and s["gsdCm"] == 0.42
+    assert s["hasOrthomosaic"] and s["gsdCm"] == ORTHO_GSD_M * 100
     assert s["pipeline"] == "OpenDroneMap 3.5.6 · NodeODM 2.2.4"
     assert len(node.created) == 1
     sent = node.created[0]
-    assert len(sent["files"]) == 3 and sent["options"]["sfm-algorithm"] == "planar"
+    assert len(sent["files"]) == 6 and sent["options"]["sfm-algorithm"] == "planar"
     assert sent["outputs"] == ["odm_orthophoto/odm_orthophoto.tif", "odm_report/report.pdf"]
     assert sent["skip_post_processing"] is True
     assert node.tasks[sent["uuid"]].removed  # the node's copy of the images is freed
@@ -306,7 +319,7 @@ def test_finished_orthophoto_is_reused_on_a_later_retry(tmp_path, odm):
     inp = _inputs(tmp_path)
     eng = NodeODMOrthomosaicEngine()
     first = eng.build(inp, lambda p: None)
-    assert first.gsd_cm == 0.42 and first.meta["geotiff"]["epsg"] == 32643
+    assert first.gsd_cm == ORTHO_GSD_M * 100 and first.meta["geotiff"]["epsg"] == 32643
     node.info_error = NodeConnectionError("offline")  # the node is not even asked the second time
     again = eng.build(inp, lambda p: None)
     assert again.path == first.path and node.downloads == 1

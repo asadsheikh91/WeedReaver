@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     max_flight_images: int = 5000
     max_scan_photo_mb: int = 12
     max_boundary_file_kb: int = 2048
+    # Checked before photogrammetry starts (OpenDroneMap engine only), so a flight that cannot
+    # work is refused in seconds instead of failing after an hour of processing.
+    min_flight_images: int = 5
+    # How far the images' mean GPS position may be from the field before the upload is refused
+    # as "uploaded against the wrong field". 0 disables the check.
+    max_flight_offset_m: float = 1000.0
 
     # ---- clock --------------------------------------------------------------------------
     # The station's local time zone. Seed dates and "season" boundaries are local.

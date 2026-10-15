@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Check, FileUp, Plus, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BoundaryPreviewDto } from '../api/dto'
+import type { FieldParcel } from '../data/types'
 import { errorMessage } from '../api/client'
 import { sampleKml } from '../data/boundaryFile'
 import { fmt } from '../data/format'
@@ -119,7 +120,14 @@ export default function Fields() {
 
 /* ------------------------------------------------------------------ add field */
 
-function AddFieldModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** Add a parcel by drawing it on satellite imagery or importing a boundary file. Analysts and administrators only. */
+export function AddFieldModal({ open, onClose, onCreated, center: start }: {
+  open: boolean; onClose: () => void
+  /** Called with the new field instead of opening its page. */
+  onCreated?: (f: FieldParcel) => void
+  /** Where the drawing map opens; defaults to the first field. */
+  center?: LatLon
+}) {
   const nav = useNavigate()
   const parse = useStore((s) => s.parseBoundary)
   const addField = useStore((s) => s.addField)
@@ -135,7 +143,7 @@ function AddFieldModal({ open, onClose }: { open: boolean; onClose: () => void }
   const [ring, setRing] = useState<LatLon[]>([])
   const fields = useStore((s) => s.fields)
   const existing = useMemo(() => fields.map((f) => ({ name: f.name, ring: f.boundary.map((p) => { const [lat, lon] = toLatLon(f, p); return { lat, lon } }) })), [fields])
-  const center = fields[0] ? { lat: fields[0].lat, lon: fields[0].lon } : { lat: 31.8942, lon: 73.2711 }
+  const center = start ?? (fields[0] ? { lat: fields[0].lat, lon: fields[0].lon } : { lat: 31.8942, lon: 73.2711 })
   const drawn = measureLatLon(ring)
 
   const reset = () => { setParsed(null); setName(''); setError(''); setRing([]) }
@@ -165,7 +173,8 @@ function AddFieldModal({ open, onClose }: { open: boolean; onClose: () => void }
     setBusy(true)
     try {
       const f = await addField({ name: name.trim(), village, boundaryLatLon, captureMethod: mode === 'map' ? 'Drawn' : 'Imported' })
-      close(); toast(`${f.name} added. A pre-treatment flight is scheduled.`, { tone: 'ok' }); nav(`/app/fields/${f.id}`)
+      close(); toast(`${f.name} added. A pre-treatment flight is scheduled.`, { tone: 'ok' })
+      if (onCreated) onCreated(f); else nav(`/app/fields/${f.id}`)
     } catch (e) {
       setError(errorMessage(e))
     }
@@ -174,7 +183,7 @@ function AddFieldModal({ open, onClose }: { open: boolean; onClose: () => void }
   const ac = parsed ? parsed.preview.area.acres : 0
 
   return (
-    <Modal open={open} onClose={close} wide title="Add a field" sub="Click the field's corners on the satellite map, or import a boundary file. Walked boundaries are captured on the phone."
+    <Modal open={open} onClose={close} wide title="Add a field" sub="Find the place, then click the field's corners on the satellite map. Or import a boundary file."
       footer={mode === 'map' ? (
         <>
           <Button variant="ghost" disabled={!ring.length} onClick={() => setRing(ring.slice(0, -1))}>Undo corner</Button>
@@ -193,10 +202,13 @@ function AddFieldModal({ open, onClose }: { open: boolean; onClose: () => void }
       {mode === 'map' ? (
         <div className="col gap-16" style={{ paddingBottom: 8 }}>
           <DrawFieldMap ring={ring} onChange={setRing} existing={existing} center={center} />
-          <div className="row gap-24 wrap">
+          {/* stats and inputs on separate rows: a longer area label must not reflow the modal under the cursor */}
+          <div className="row gap-24">
             <Stat sm value={drawn.acres} format={(n) => n.toFixed(2)} unit="ac" label={fmt.areaAlt(drawn.acres, true)} />
             <Stat sm value={fmt.meters(drawn.perimeterM)} label="Perimeter" />
             <Stat sm value={String(ring.length)} label="Corners" />
+          </div>
+          <div className="row gap-16 wrap">
             <div className="grow" style={{ minWidth: 220 }}>
               <Field label="Field name"><TextInput value={name} onChange={(e) => setName(e.target.value.slice(0, 32))} placeholder="e.g. Tubewell killa" /></Field>
             </div>
@@ -205,7 +217,8 @@ function AddFieldModal({ open, onClose }: { open: boolean; onClose: () => void }
             </div>
           </div>
           {drawn.crosses && <div className="notice notice--clay"><div><h4>The outline crosses itself. Undo the last corner or drag a corner to fix it.</h4></div></div>}
-          {ring.length > 0 && ring.length < 3 && <span className="caption">Keep clicking corners: a field needs at least three.</span>}
+          {/* always one line, so the map does not move under the cursor between clicks */}
+          <span className="caption">{ring.length === 0 ? 'Click each corner of the field on the map, in order.' : ring.length < 3 ? 'Keep clicking corners: a field needs at least three.' : 'Drag a corner to adjust it, or keep clicking to add more.'}</span>
           {error && <div className="notice notice--clay"><div><h4>{error}</h4></div></div>}
         </div>
       ) : !parsed ? (

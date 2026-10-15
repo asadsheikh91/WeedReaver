@@ -40,7 +40,28 @@ export interface SurveyDto {
   id: string; fieldSeasonId: string; fieldId: string; fieldName: string; role: SurveyRole; status: SurveyStatus
   flownAt: Iso; altitudeM: number; sensor: string; gsdCm: number; images: number; imageBytes: number
   progress: number; stage: string | null; source: string | null; error: string | null
-  pipeline: string | null; modelVersion: string | null; job: JobDto | null
+  pipeline: string | null; modelVersion: string | null; processedAt: Iso | null; hasOrthomosaic: boolean; job: JobDto | null
+}
+
+export interface UploadResultDto {
+  surveyId: string; received: number; duplicates: number; rejected: { file: string; reason: string }[]
+  images: number; imageBytes: number; withGps: number
+}
+
+export interface FlightImagesDto {
+  surveyId: string; images: number; imageBytes: number; withGps: number
+  gpsCentre: { lat: number; lon: number } | null; offsetFromFieldM: number | null
+  files: { filename: string; sizeBytes: number; hasGps: boolean }[]
+}
+
+/** How a web map shows a flight's orthomosaic: XYZ tiles in Web Mercator. */
+export interface OrthomosaicDto {
+  surveyId: string; fieldId: string; role: SurveyRole; flownAt: Iso; processedAt: Iso | null
+  bounds: { west: number; south: number; east: number; north: number }
+  minZoom: number; maxZoom: number; gsdCm: number; width: number; height: number; epsg: number | null
+  sizeBytes: number; version: string
+  /** Relative to the API root, with {z}/{x}/{y} placeholders. */
+  tileUrl: string; downloadUrl: string
 }
 
 export interface ZoneDto {
