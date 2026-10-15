@@ -10,7 +10,7 @@ from tests.conftest import API
 PARAMS = {
     "field_id": "F-047", "survey_id": "S-01", "scan_id": "SC-036", "treatment_id": "T-2025-A", "export_id": "X-03",
     "device_id": "D-01", "season_id": "FS-047", "user_id": "U-4", "product_id": "P-01", "invitation_id": "missing",
-    "zone": "A",
+    "zone": "A", "z": "18", "x": "184428", "y": "106546", "fmt": "webp",
 }
 BODIES = {
     ("post", "/fields/{field_id}/zones/{zone}/state"): {"state": "ROUTED"},

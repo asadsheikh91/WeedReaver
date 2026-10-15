@@ -40,7 +40,7 @@ def test_upload_simulated_pre_flight_publishes_zones(client, analyst):
 def test_new_field_full_loop_with_real_image_upload(client, analyst, operator):
     body = {"clientId": "loop-field-1", "name": "Loop field", "captureMethod": "Drawn",
             "boundary": [{"x": 0, "y": 0}, {"x": 140, "y": 0}, {"x": 140, "y": 100}, {"x": 0, "y": 100}], "lat": 31.9, "lon": 73.27}
-    fid = client.post(f"{API}/fields", json=body, headers=operator).json()["id"]
+    fid = client.post(f"{API}/fields", json=body, headers=analyst).json()["id"]
     sid = client.post(f"{API}/surveys/uploads", json={"fieldId": fid, "role": "PRE"}, headers=analyst).json()["id"]
     zbuf = io.BytesIO()
     with zipfile.ZipFile(zbuf, "w") as zf:

@@ -46,6 +46,10 @@ class SurveyImage(Base):
     size_bytes: Mapped[int] = mapped_column(BigInteger)
     content_type: Mapped[str | None] = mapped_column(String(80))
     uploaded_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    # Where the camera was, from the image's EXIF GPS block (None: the image carries no position).
+    lat: Mapped[float | None] = mapped_column(Float)
+    lon: Mapped[float | None] = mapped_column(Float)
+    alt_m: Mapped[float | None] = mapped_column(Float)
 
 
 class SurveySurface(Timestamped, Base):

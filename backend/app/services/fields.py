@@ -301,7 +301,12 @@ def season_id_for(db: Session, field_id: str, label: str) -> str:
 def create_field(
     db: Session, user: User, data: FieldCreate, *, device_id: str | None = None, client_seq: int | None = None
 ) -> tuple[Field, bool]:
-    """Returns (field, created). A repeated client_id returns the existing field."""
+    """Returns (field, created). A repeated client_id returns the existing field.
+
+    Enrolling a parcel defines it (boundary, season, the flights it will get), so only a deciding
+    role (analyst or administrator) may do it; operators and trainees work on fields they are given.
+    """
+    access.require_decider(user, "Adding a field")
     if data.client_id:
         existing = db.scalar(select(Field).where(Field.client_id == data.client_id))
         if existing is not None:

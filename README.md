@@ -178,6 +178,24 @@ What `NodeODMOrthomosaicEngine` does for you:
 - Re-attaches to a running task after a crash instead of uploading again, and falls back once to a slower SfM algorithm if the fast run fails — with failures phrased as causes ("ran out of memory…", "too few images…").
 - Keeps heavy data local: flights are gigabytes, so run NodeODM on the machine that holds the images.
 
+Around it, the station makes the trip from SD card to map hard to get wrong:
+
+- **Checked before it is stitched.** Every photo's GPS position is read from its EXIF block at upload. A flight
+  with too few images, without GPS (an edited or exported copy), or taken about a kilometre or more from the
+  field it was uploaded against is refused in seconds, not after an hour of photogrammetry.
+- **Uploads that survive a bad connection.** Images go up in batches; a failed batch is retried, a re-sent file
+  is recognised (same name and size) and skipped, and an interrupted upload resumes where it stopped.
+- **On the map.** The finished orthomosaic is served as Web Mercator tiles straight from ODM's cloud-optimised
+  GeoTIFF (`rasterio` + `rio-tiler`, as WebODM does) to anyone who may see the field. The dashboard's **Map** tab
+  shows every field on satellite imagery with its latest orthomosaic over it, and live progress while one is
+  being stitched.
+
+| Role | On the dashboard |
+|---|---|
+| `ANALYST`, `ADMIN` | Add fields (draw on satellite imagery or import KML / GeoJSON), upload flight images, see every field and its orthomosaic |
+| `OPERATOR` | See every field and its orthomosaic; cannot add fields or upload flights |
+| `TRAINEE` | Same as an operator, limited to the fields assigned to them |
+
 **Bring your own segmentation model.** Implement `ModelSegmentationEngine.segment` in
 [`backend/app/pipeline/segmentation.py`](backend/app/pipeline/segmentation.py) and return per-pixel weed
 cover, class map (crop / grass weed / broadleaf weed) and confidence. Grids, abstention, zones with stable
@@ -209,7 +227,8 @@ Base path `/api/v1` · camelCase JSON · ISO 8601 UTC timestamps · errors as `{
 | **Auth** | `POST /auth/login` · `/auth/refresh` · `GET /auth/me` — 15-minute access tokens, rotating 60-day refresh tokens |
 | **Fields** | `GET /fields` · `POST /fields/parse-boundary` (GeoJSON / KML / CSV) · `GET /fields/{id}/grid?size=&threshold=` |
 | **Prescription** | `GET /fields/{id}/zones` · `/zones/preview?threshold=` · `PUT /settings/threshold` · `GET /fields/{id}/route` |
-| **Flights** | `POST /surveys` → `POST /surveys/{id}/images` → `POST /surveys/{id}/process` |
+| **Flights** | `POST /surveys/uploads` → `POST /surveys/{id}/images` (resumable) → `POST /surveys/{id}/process` |
+| **Orthomosaic** | `GET /surveys/{id}/orthomosaic/info` · `GET /surveys/{id}/orthomosaic/tiles/{z}/{x}/{y}.webp` · `GET /surveys/{id}/orthomosaic` (GeoTIFF) |
 | **Review** | `GET /scans?status=NEEDS_LABEL` · `POST /scans/{id}/resolve` |
 | **Treatments** | `GET /treatments` · `POST /treatments` · `POST /rotation/check` · `GET /fields/{id}/rotation` |
 | **Verification** | `GET /fields/{id}/verification?role=PLUS_14D` |
@@ -287,8 +306,9 @@ photogrammetry through OpenDroneMap.
 and tests need no GPU or ODM node), leaf inference (runs on the phone), and weather (static unless
 `WR_WEATHER_PROVIDER=open-meteo`).
 
-The dashboard's aerial imagery is rendered procedurally in Web Workers from each parcel's geometry — a stand-in
-that real raster tiles can replace without touching any page.
+The **Map** tab shows real imagery: the satellite basemap and each flight's stitched orthomosaic. The weed map,
+field thumbnails and verification views still draw procedural imagery rendered in Web Workers from each
+parcel's geometry, a stand-in the orthomosaic tiles can replace page by page.
 
 <br>
 
