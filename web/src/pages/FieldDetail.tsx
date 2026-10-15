@@ -1,4 +1,4 @@
-import { ArrowLeft, BadgeCheck, Check, Droplets, FileDown, Layers, PlaneTakeoff, Route, Sprout } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Check, Droplets, FileDown, Layers, Map as MapIcon, PlaneTakeoff, Route, Sprout } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { fmt } from '../data/format'
@@ -83,6 +83,7 @@ function Detail({ id, nav }: { id: string; nav: ReturnType<typeof useNavigate> }
         title={<span className="row gap-12 wrap">{field.name}<span className="mono" style={{ alignSelf: 'center' }}>{field.id}</span><FieldStatusPill fieldId={id} /></span>}
         sub={`${field.village} · ${season?.crop ?? ''} ${season?.variety ?? ''}${season?.sowingDate ? `, sown ${fmt.date(season.sowingDate)}` : ''}`}
       >
+        <Button icon={MapIcon} onClick={() => nav(`/app/map?field=${id}`)}>Open on map</Button>
         <Button icon={FileDown} onClick={() => nav('/app/exports')}>Export</Button>
         <Button variant="primary" icon={Layers} disabled={!surveyed} onClick={() => nav(`/app/weed-map/${id}`)}>Open weed map</Button>
       </PageHead>

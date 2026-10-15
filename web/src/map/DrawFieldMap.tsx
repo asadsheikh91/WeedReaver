@@ -3,21 +3,11 @@ import 'leaflet/dist/leaflet.css'
 import { Crosshair, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, TextInput } from '../ui/kit'
+import { satellite, streets } from './basemaps'
 import './map.css'
 
 export interface LatLon { lat: number; lon: number }
 
-/*
- * Free, key-less base maps (Google Maps needs billing). Satellite is Esri World Imagery, sharp enough over
- * Punjab to see killa lines and bunds; street is OpenStreetMap. Both only ask for the attribution shown.
- * shortcut: public tile servers, fine for a station's light use; for heavy use self-host tiles or swap these URLs.
- */
-const satellite = () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom: 20, maxNativeZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
-})
-const streets = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20, maxNativeZoom: 19, attribution: '© OpenStreetMap contributors',
-})
 const CORNER = L.divIcon({ className: 'draw-corner', iconSize: [14, 14] })
 
 /** Click the field's corners on the imagery; drag a corner to adjust it. */
@@ -38,7 +28,7 @@ export function DrawFieldMap({ ring, onChange, existing, center }: {
 
   useEffect(() => {
     const sat = satellite()
-    const m = L.map(el.current!, { center: [center.lat, center.lon], zoom: 16, layers: [sat] })
+    const m = L.map(el.current!, { center: [center.lat, center.lon], zoom: 16, maxZoom: 20, layers: [sat] })
     L.control.layers({ Satellite: sat, Street: streets() }).addTo(m)
     existing.forEach((f) => L.polygon(f.ring.map((p): L.LatLngTuple => [p.lat, p.lon]), { color: '#FFF6DE', weight: 1.5, dashArray: '4 4', fillOpacity: 0.08, interactive: false })
       .bindTooltip(f.name, { permanent: true, direction: 'center', className: 'draw-label' }).addTo(m))

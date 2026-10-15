@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   BadgeCheck, ChevronRight, CloudUpload, Command, FileDown, Inbox, Layers, LayoutDashboard, PlaneTakeoff, RefreshCw,
-  Search, Settings2, Smartphone, Sprout, TrendingDown, Droplets, ArrowUpRight, CornerDownLeft, LogOut, type LucideIcon,
+  Search, Settings2, Smartphone, Sprout, TrendingDown, Droplets, ArrowUpRight, CornerDownLeft, LogOut, Map as MapIcon, type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -18,6 +18,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'Workspace', items: [
     { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
     { to: '/app/fields', label: 'Fields', icon: Sprout },
+    { to: '/app/map', label: 'Map', icon: MapIcon },
     { to: '/app/weed-map', label: 'Weed map', icon: Layers },
   ] },
   { group: 'Pipeline', items: [
@@ -37,7 +38,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
 ]
 
 const TITLES: [RegExp, string][] = [
-  [/^\/app$/, 'Overview'], [/^\/app\/fields\/.+/, 'Field'], [/^\/app\/fields/, 'Fields'], [/^\/app\/weed-map/, 'Weed map'],
+  [/^\/app$/, 'Overview'], [/^\/app\/fields\/.+/, 'Field'], [/^\/app\/fields/, 'Fields'], [/^\/app\/map/, 'Map'], [/^\/app\/weed-map/, 'Weed map'],
   [/^\/app\/flights/, 'Flights'], [/^\/app\/review/, 'Review queue'], [/^\/app\/treatments/, 'Treatments'],
   [/^\/app\/rotation/, 'Rotation & resistance'], [/^\/app\/verification/, 'Verification'], [/^\/app\/exports/, 'Exports'],
   [/^\/app\/devices/, 'Devices & sync'], [/^\/app\/settings/, 'Settings'],
@@ -73,7 +74,7 @@ export function AppShell() {
 
   const title = TITLES.find(([r]) => r.test(loc.pathname))?.[1] ?? 'Dashboard'
   const key = loc.pathname.split('/').slice(0, 3).join('/')
-  const full = /^\/app\/weed-map/.test(loc.pathname)
+  const full = /^\/app\/(weed-map|map)(\/|$)/.test(loc.pathname)
 
   return (
     <div className="shell">
@@ -181,6 +182,7 @@ function Palette() {
       ...fields.flatMap((f) => [
         { group: 'Fields', label: `${f.name} — field`, icon: Sprout, run: go(`/app/fields/${f.id}`), hint: f.id },
         { group: 'Fields', label: `${f.name} — weed map`, icon: Layers, run: go(`/app/weed-map/${f.id}`), hint: f.id },
+        { group: 'Fields', label: `${f.name} — on the map`, icon: MapIcon, run: go(`/app/map?field=${f.id}`), hint: f.id },
       ]),
       { group: 'Actions', label: 'Check for phone changes', icon: RefreshCw, run: () => { nav('/app/devices'); void useStore.getState().pullFromPhone() } },
       { group: 'Actions', label: 'Upload a flight', icon: PlaneTakeoff, run: go('/app/flights?upload=1') },

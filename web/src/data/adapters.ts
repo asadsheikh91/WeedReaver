@@ -25,6 +25,7 @@ export const toSurvey = (d: SurveyDto): Survey => ({
   id: d.id, fieldSeasonId: d.fieldSeasonId, fieldId: d.fieldId, flownAt: ms(d.flownAt), role: d.role, altitudeM: d.altitudeM,
   sensor: d.sensor, gsdCm: d.gsdCm, status: d.status, images: d.images, progress: d.progress,
   stage: d.stage ?? undefined, source: d.source ?? undefined, error: d.error ?? d.job?.error ?? undefined,
+  hasOrthomosaic: d.hasOrthomosaic ?? false, processedAt: ms(d.processedAt) ?? undefined, imageBytes: d.imageBytes,
 })
 
 export const toZone = (d: ZoneDto): TreatmentZone => ({
